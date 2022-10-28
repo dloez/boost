@@ -17,6 +17,7 @@ def generic_exec(args: list) -> bool:
     returns:
         - bool as True if sucess, False otherwise.
     """
+    print("hit")
     obj = Path(args[0])
     if obj.is_file():
         obj.unlink()

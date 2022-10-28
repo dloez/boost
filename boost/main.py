@@ -3,6 +3,7 @@ import sys
 import importlib
 from pathlib import Path
 import argparse
+import os
 
 import yaml
 from yaml.loader import SafeLoader
@@ -60,8 +61,18 @@ def call_command(cmd: str, args: list) -> bool:
         command = importlib.import_module(f"boost.cmd.{cmd}")
     except ModuleNotFoundError:
         return False
-    command.generic_exec(args)
-    return True
+
+    # validate if command has implement a generic execution
+    if hasattr(command, "generic_exec"):
+        return command.generic_exec(args)
+
+    os_to_function = {"nt": "win_exec", "posix": "posix_exec"}
+    try:
+        call = os_to_function[os.name]
+        return getattr(command, call)(args)
+    except KeyError:
+        print("Unsuported SO")
+    return False
 
 
 def main() -> int:
@@ -82,9 +93,6 @@ def main() -> int:
     for cmd in commands:
         cmd, *args = cmd.split(" ")
         call_command(cmd, args)
-
-    # delete = importlib.import_module("boost.cmd.delete")
-    # delete.generic_exec(Path("example1.txt"))
     return 0
 
 
