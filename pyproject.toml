@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "boost"
+version = "0.1.0"
+description = ""
+authors = ["David Lopez <davidlopez.hellin@outlook.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pyyaml = "^6.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^2.15.5"
+black = "^22.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 88
