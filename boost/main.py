@@ -7,6 +7,7 @@ import os
 
 import yaml
 from yaml.loader import SafeLoader
+from colorama import init, Fore
 
 
 def init_parser() -> argparse.ArgumentParser:
@@ -24,23 +25,25 @@ def init_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def validate_boost() -> dict | bool:
+def validate_boost() -> dict:
     """Reads and validates boost.yaml file.
 
     returns:
         - dict containing parsed and validated yaml.
         - bool as false in case yaml file could not be readen or validated.
     """
-    # TODO: improve validation and in case of error during valdiation
-    # return useful error codes/messages
     if not BOOST_FILE.exists():
-        return False
+        return {
+            "error": "Boost file does not exist, please read https://github.com/dloez/boost/tree/main#using-boost"
+        }
 
     with open(BOOST_FILE, "r", encoding="utf8") as handler:
         boost_data = yaml.load(handler, Loader=SafeLoader)
     if "boost" in boost_data:
         return boost_data
-    return False
+    return {
+        "error": "boost section file does not exist, please read https://github.com/dloez/boost/tree/main#using-boost"
+    }
 
 
 def call_command(cmd: str, args: list) -> bool:
@@ -77,11 +80,14 @@ def call_command(cmd: str, args: list) -> bool:
 
 def main() -> int:
     """Main function"""
+    init(autoreset=True)
+
     parser = init_parser()
     args = parser.parse_args()
 
     boost_data = validate_boost()
-    if not boost_data:
+    if "error" in boost_data:
+        print(Fore.RED + boost_data["error"])
         return 1
 
     if not args.boost:

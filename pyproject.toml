@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 pyyaml = "^6.0"
+colorama = "^0.4.6"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -19,4 +20,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pylint.'MESSAGES CONTROL']
-max-line-length = 88
+max-line-length = 199
