@@ -4,9 +4,10 @@ This command allows deleteion of files and folders
 """
 from pathlib import Path
 import shutil
+from typing import List
 
 
-def generic_exec(args: list) -> bool:
+def generic_exec(args: List[str]) -> bool:
     """Delete given object which can be a file or a directory
 
     params:
@@ -17,7 +18,6 @@ def generic_exec(args: list) -> bool:
     returns:
         - bool as True if sucess, False otherwise.
     """
-    print("hit")
     obj = Path(args[0])
     if obj.is_file():
         obj.unlink()

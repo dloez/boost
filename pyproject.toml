@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "boost"
 version = "0.1.0"
-description = ""
+description = "Boost is a simple build system that aims to create an interface for shell command substitution across different operative systems."
 authors = ["David Lopez <davidlopez.hellin@outlook.com>"]
 readme = "README.md"
 
