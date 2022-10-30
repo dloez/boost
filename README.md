@@ -16,12 +16,12 @@ To use Boost, first, create a `boost.yaml` file in your project directory. This 
 
 ```yaml
 vars:
-  file: example1.txt
-  current-dir: exec pwd
+  file: example.txt
+  current_dir: exec pwd
 boost:
   dev: |
-    delete $file
-    echo $current-dir
+    delete {file}
+    asd {current_dir}
 ```
 - `vars`: Define key-value pairs representing variables that needs to be used inside boost targets. If a variable needs to store the output from a command, use `exec` followed by the commands that needs to be captured.
 - `boost`: Define key-value pairs named boost targets. Target key will be used to call that specific target. Value contains a list of commands separated by `\n` that will be triggered when calling a specific target.

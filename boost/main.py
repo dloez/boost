@@ -48,7 +48,7 @@ def validate_boost() -> dict:
     }
 
 
-def call_command(cmd: str, args: list) -> dict:
+def call_command(cmd: str, args: List[str]) -> dict:
     """Execute given command.
 
     Given command is dyanmically imported from cmd module.
@@ -65,12 +65,17 @@ def call_command(cmd: str, args: list) -> dict:
     try:
         command = importlib.import_module(f"boost.cmd.{cmd}")
     except ModuleNotFoundError:
-        return {"error": f"command {cmd} not found"}
+        # In case the command does not exist on Boost ecosystem, call unkown command.
+        # unkown command does also need to know required command, this is why we are
+        # adding cmd to args at 0 index.
+        command = importlib.import_module("boost.cmd.unkown")
+        args.insert(0, cmd)
 
     # validate if command has implement a generic execution
     if hasattr(command, "generic_exec"):
         return command.generic_exec(args)
 
+    # command has different behaviour for windows/posix
     os_to_function = {"nt": "win_exec", "posix": "posix_exec"}
     try:
         call = os_to_function[os.name]
@@ -138,7 +143,7 @@ def main() -> int:
         boost = args.boost
 
     variables = re.findall("{.*}", boost_data["boost"][boost])
-    commands = boost_data["boost"][boost].split("\n")[:-1]
+    commands = boost_data["boost"][boost].strip().split("\n")
     total_commands = len(commands)
     print(Fore.CYAN + f"Boosting {boost} - {total_commands} commands")
 
