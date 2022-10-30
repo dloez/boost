@@ -9,11 +9,10 @@ def generic_exec(args: List[str]) -> dict | bool:
     """Print given object
 
     params:
-        - args: list of given arguments.
-            - obj: Object that needs to be printed.
+        - args: list of given arguments. All arguments are printed with a space between them.
 
     returns:
        - dict containing output of command on output key or error on error key.
     """
-    print(args[0])
+    print(" ".join(args))
     return {}

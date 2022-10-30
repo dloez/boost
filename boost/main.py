@@ -48,7 +48,7 @@ def validate_boost() -> dict:
     }
 
 
-def call_command(cmd: str, args: list) -> bool:
+def call_command(cmd: str, args: list) -> dict:
     """Execute given command.
 
     Given command is dyanmically imported from cmd module.
@@ -60,12 +60,12 @@ def call_command(cmd: str, args: list) -> bool:
         - args: command arguments.
 
     returns:
-        - bool as True if command was executed succesfully, False otherwise.
+        - dict containing executed command output on output key or error on error key.
     """
     try:
         command = importlib.import_module(f"boost.cmd.{cmd}")
     except ModuleNotFoundError:
-        return False
+        return {"error": f"module {cmd} not found"}
 
     # validate if command has implement a generic execution
     if hasattr(command, "generic_exec"):
@@ -76,8 +76,7 @@ def call_command(cmd: str, args: list) -> bool:
         call = os_to_function[os.name]
         return getattr(command, call)(args)
     except KeyError:
-        print("Unsuported SO")
-    return False
+        return {"error": "unsuported OS"}
 
 
 def get_storage(boost_data: dict, variables: List[str]) -> dict:
@@ -97,7 +96,14 @@ def get_storage(boost_data: dict, variables: List[str]) -> dict:
         value = ""
         clean_var = variable.replace("{", "").replace("}", "")
         if clean_var in boost_data["vars"]:
-            value = boost_data["vars"][clean_var]
+            if boost_data["vars"][clean_var].startswith("exec "):
+                cmd, *args = (
+                    boost_data["vars"][clean_var].replace("exec ", "").split(" ")
+                )
+                # TODO: handle error
+                value = call_command(cmd, args)["output"]
+            else:
+                value = boost_data["vars"][clean_var]
         else:
             # TODO: if variable was not declated on boost file, load it from environment vars
             pass
@@ -134,6 +140,9 @@ def main() -> int:
         call_command(cmd, args)
     return 0
 
+
+# TODO: Implement custom file parsing, yaml will not be enough for future functionalities.
+# TODO: Better error handling.
 
 BOOST_FILE = Path("boost.yaml")
 
