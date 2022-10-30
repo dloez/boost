@@ -65,7 +65,7 @@ def call_command(cmd: str, args: list) -> dict:
     try:
         command = importlib.import_module(f"boost.cmd.{cmd}")
     except ModuleNotFoundError:
-        return {"error": f"module {cmd} not found"}
+        return {"error": f"command {cmd} not found"}
 
     # validate if command has implement a generic execution
     if hasattr(command, "generic_exec"):
@@ -89,7 +89,8 @@ def get_storage(boost_data: dict, variables: List[str]) -> dict:
         - variables: list of required variables to store.
 
     returns:
-        - dict containing all stored variables for commands use.
+        - dict containing all stored variables for commands use or dict containing error key on case
+        there was an error building the storage.
     """
     storage = {}
     for variable in variables:
@@ -100,13 +101,20 @@ def get_storage(boost_data: dict, variables: List[str]) -> dict:
                 cmd, *args = (
                     boost_data["vars"][clean_var].replace("exec ", "").split(" ")
                 )
-                # TODO: handle error
-                value = call_command(cmd, args)["output"]
+                cmd_output = call_command(cmd, args)
+                if "error" in cmd_output:
+                    return cmd_output
+                else:
+                    value = cmd_output["output"]
             else:
                 value = boost_data["vars"][clean_var]
         else:
-            # TODO: if variable was not declated on boost file, load it from environment vars
-            pass
+            try:
+                value = os.environ[clean_var]
+            except KeyError:
+                return {
+                    "error": f"variable {clean_var} is not declared neither on vars section or on system env variables"
+                }
         storage[variable] = value
     return storage
 
@@ -128,16 +136,27 @@ def main() -> int:
         boost = next(iter(boost_data["boost"]))
     else:
         boost = args.boost
+
     variables = re.findall("{.*}", boost_data["boost"][boost])
     commands = boost_data["boost"][boost].split("\n")[:-1]
+    total_commands = len(commands)
+    print(Fore.CYAN + f"Boosting {boost} - {total_commands} commands")
 
     storage = get_storage(boost_data, variables)
-    for cmd in commands:
+    if "error" in storage:
+        print(Fore.RED + storage["error"])
+        return 1
+
+    for i, cmd in enumerate(commands):
         variables = re.findall("{.*}", cmd)
         for var in variables:
             cmd = cmd.replace(var, storage[var])
+        print(Fore.GREEN + f"    - [{i + 1}/{total_commands}] - {cmd}")
         cmd, *args = cmd.split(" ")
-        call_command(cmd, args)
+        output = call_command(cmd, args)
+        if "error" in output:
+            print(Fore.RED + output["error"])
+            return 1
     return 0
 
 
