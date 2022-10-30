@@ -63,12 +63,12 @@ def call_command(cmd: str, args: List[str]) -> dict:
         - dict containing executed command output on output key or error on error key.
     """
     try:
-        command = importlib.import_module(f"boost.cmd.{cmd}")
+        command = importlib.import_module(f"boostbuild.cmd.{cmd}")
     except ModuleNotFoundError:
         # In case the command does not exist on Boost ecosystem, call unkown command.
         # unkown command does also need to know required command, this is why we are
         # adding cmd to args at 0 index.
-        command = importlib.import_module("boost.cmd.unkown")
+        command = importlib.import_module("boostbuild.cmd.unkown")
         args.insert(0, cmd)
 
     # validate if command has implement a generic execution
