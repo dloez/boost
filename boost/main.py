@@ -4,6 +4,8 @@ import importlib
 from pathlib import Path
 import argparse
 import os
+import re
+from typing import List
 
 import yaml
 from yaml.loader import SafeLoader
@@ -78,6 +80,31 @@ def call_command(cmd: str, args: list) -> bool:
     return False
 
 
+def get_storage(boost_data: dict, variables: List[str]) -> dict:
+    """Store commands variables.
+
+    From list of required variables, store on a dictionary each variable key and value.
+
+    params:
+        - boost_data: yaml parsed boost file.
+        - variables: list of required variables to store.
+
+    returns:
+        - dict containing all stored variables for commands use.
+    """
+    storage = {}
+    for variable in variables:
+        value = ""
+        clean_var = variable.replace("{", "").replace("}", "")
+        if clean_var in boost_data["vars"]:
+            value = boost_data["vars"][clean_var]
+        else:
+            # TODO: if variable was not declated on boost file, load it from environment vars
+            pass
+        storage[variable] = value
+    return storage
+
+
 def main() -> int:
     """Main function"""
     init(autoreset=True)
@@ -95,8 +122,14 @@ def main() -> int:
         boost = next(iter(boost_data["boost"]))
     else:
         boost = args.boost
+    variables = re.findall("{.*}", boost_data["boost"][boost])
     commands = boost_data["boost"][boost].split("\n")[:-1]
+
+    storage = get_storage(boost_data, variables)
     for cmd in commands:
+        variables = re.findall("{.*}", cmd)
+        for var in variables:
+            cmd = cmd.replace(var, storage[var])
         cmd, *args = cmd.split(" ")
         call_command(cmd, args)
     return 0

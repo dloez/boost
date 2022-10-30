@@ -1,13 +1,13 @@
 """
-Delete command module
-This command allows deleteion of files and folders
+delete command module.
+This command allows the deletion of files and folders.
 """
 from pathlib import Path
 import shutil
 from typing import List
 
 
-def generic_exec(args: List[str]) -> bool:
+def generic_exec(args: List[str]) -> dict | bool:
     """Delete given object which can be a file or a directory
 
     params:
@@ -16,11 +16,11 @@ def generic_exec(args: List[str]) -> bool:
             a folder.
 
     returns:
-        - bool as True if sucess, False otherwise.
+       - dict containing output of command on output key or error on error key.
     """
     obj = Path(args[0])
     if obj.is_file():
         obj.unlink()
     elif obj.is_dir():
         shutil.rmtree(obj)
-    return True
+    return {"output": "object deleted"}
