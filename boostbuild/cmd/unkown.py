@@ -19,15 +19,11 @@ def win_exec(command: List[str]) -> dict | bool:
         - dict containing output of command on output key or error on error key.
     """
     command.insert(0, "powershell")
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    output = ""
-    for line in iter(process.stdout.readline, b""):
-        decoded = line.rstrip().decode(encoding="unicode_escape")
-        print(decoded)
-        output += decoded
-
-    error = process.stderr.read().decode(encoding="unicode_escape")
-    if error:
-        return {"error": error}
-    return {"output": output}
+    # in this case "shell" attribute is all we need. I do not want to interact with stdout/in/err in
+    # any way, I just want to spawn a shell and execute given argument giving the user full control
+    # (at least for the moment)
+    # TODO: better error catching
+    result = subprocess.run(command, shell=True, check=False)
+    if result.stderr:
+        return {"error", result.stderr.decode(encoding="unicode_escape")}
+    return {"output": result.stdout}

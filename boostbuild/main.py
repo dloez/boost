@@ -1,4 +1,4 @@
-"""Main module"""
+"""Main module."""
 import sys
 import importlib
 from pathlib import Path
@@ -7,9 +7,9 @@ import os
 import re
 from typing import List
 
-import yaml
-from yaml.loader import SafeLoader
 from colorama import init, Fore
+
+from boostbuild.validation import validate_boost_file
 
 
 def init_parser() -> argparse.ArgumentParser:
@@ -34,18 +34,6 @@ def validate_boost() -> dict:
         - dict containing parsed and validated yaml.
         - bool as false in case yaml file could not be readen or validated.
     """
-    if not BOOST_FILE.exists():
-        return {
-            "error": "Boost file does not exist, please read https://github.com/dloez/boost/tree/main#using-boost"
-        }
-
-    with open(BOOST_FILE, "r", encoding="utf8") as handler:
-        boost_data = yaml.load(handler, Loader=SafeLoader)
-    if "boost" in boost_data:
-        return boost_data
-    return {
-        "error": "boost section file does not exist, please read https://github.com/dloez/boost/tree/main#using-boost"
-    }
 
 
 def call_command(cmd: str, args: List[str]) -> dict:
@@ -131,7 +119,7 @@ def main() -> int:
     parser = init_parser()
     args = parser.parse_args()
 
-    boost_data = validate_boost()
+    boost_data = validate_boost_file(BOOST_FILE)
     if "error" in boost_data:
         print(Fore.RED + boost_data["error"])
         return 1
@@ -156,7 +144,7 @@ def main() -> int:
         variables = re.findall("{.*}", cmd)
         for var in variables:
             cmd = cmd.replace(var, storage[var])
-        print(Fore.GREEN + f"    - [{i + 1}/{total_commands}] - {cmd}")
+        print(Fore.GREEN + f"-> [{i + 1}/{total_commands}] - {cmd}")
         cmd, *args = cmd.split(" ")
         output = call_command(cmd, args)
         if "error" in output:
@@ -165,9 +153,7 @@ def main() -> int:
     return 0
 
 
-# TODO: Implement custom file parsing, yaml will not be enough for future functionalities.
-# TODO: Better error handling.
-
+# TODO: allow overriding BOOST_FILE path with -f arg
 BOOST_FILE = Path("boost.yaml")
 
 if __name__ == "__main__":
