@@ -130,7 +130,7 @@ def main() -> int:
     else:
         boost = args.boost
 
-    variables = re.findall("{.*}", boost_data["boost"][boost])
+    variables = re.findall("{.*?}", boost_data["boost"][boost])
     commands = boost_data["boost"][boost].strip().split("\n")
     total_commands = len(commands)
     print(Fore.CYAN + f"Boosting {boost} - {total_commands} commands")
@@ -141,7 +141,7 @@ def main() -> int:
         return 1
 
     for i, cmd in enumerate(commands):
-        variables = re.findall("{.*}", cmd)
+        variables = re.findall("{.*?}", cmd)
         for var in variables:
             cmd = cmd.replace(var, storage[var])
         print(Fore.GREEN + f"-> [{i + 1}/{total_commands}] - {cmd}")

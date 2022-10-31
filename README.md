@@ -28,3 +28,9 @@ boost:
 If a value needs to use a variable, use `$` followed by the variable name that was previously declared on `vars` section.
 
 To call a boost target, run `boost <TARGET>`. If no boost target was specified, boost will use the first defined target.
+
+## Developing boost
+Requirements:
+  - poetry
+
+Run `poetry install`. Whit the previous command, you can run `poetry run boost` to test boost, boost command does automatically trigger `boostbuild.main:main` function.
