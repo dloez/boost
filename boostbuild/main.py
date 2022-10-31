@@ -27,15 +27,6 @@ def init_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def validate_boost() -> dict:
-    """Reads and validates boost.yaml file.
-
-    returns:
-        - dict containing parsed and validated yaml.
-        - bool as false in case yaml file could not be readen or validated.
-    """
-
-
 def call_command(cmd: str, args: List[str]) -> dict:
     """Execute given command.
 
