@@ -19,21 +19,12 @@ def init_parser() -> argparse.ArgumentParser:
         - ArgumentParser with configured arguments.
     """
     parser = argparse.ArgumentParser(
-        prog="Boost", description="A modern python multiplatform build system"
+        prog="Boost",
+        description="Boost is a simple build system that aims to create an interface \
+            for shell command substitution across different operative systems.",
     )
-    parser.add_argument(
-        "boost", help="Boost operation", nargs="?", default="", type=str
-    )
+    parser.add_argument("boost", help="Boost target", nargs="?", default="", type=str)
     return parser
-
-
-def validate_boost() -> dict:
-    """Reads and validates boost.yaml file.
-
-    returns:
-        - dict containing parsed and validated yaml.
-        - bool as false in case yaml file could not be readen or validated.
-    """
 
 
 def call_command(cmd: str, args: List[str]) -> dict:
