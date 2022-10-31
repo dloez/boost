@@ -18,12 +18,8 @@ def win_exec(command: List[str]) -> dict:
     returns:
         - dict containing output of command on output key or error on error key.
     """
-    command.insert(0, "powershell")
-    # in this case "shell" attribute is all we need. I do not want to interact with stdout/in/err in
-    # any way, I just want to spawn a shell and execute given argument giving the user full control
-    # (at least for the moment)
     # TODO: better error catching
-    result = subprocess.run(command, check=False)
+    result = subprocess.run(["powershell", " ".join(command)], check=False)
     if result.stderr:
         return {"error": result.stderr.decode(encoding="unicode_escape")}
     output = ""
@@ -43,11 +39,8 @@ def posix_exec(command: List[str]) -> dict:
     returns:
         - dict containing output of command on output key or error on error key.
     """
-    # in this case "shell" attribute is all we need. I do not want to interact with stdout/in/err in
-    # any way, I just want to spawn a shell and execute given argument giving the user full control
-    # (at least for the moment)
     # TODO: better error catching
-    result = subprocess.run(command, check=False)
+    result = subprocess.run(["/bin/bash", "-c", " ".join(command)], check=False)
     if result.stderr:
         return {"error": result.stderr.decode()}
     output = ""
