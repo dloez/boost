@@ -5,7 +5,7 @@ This command prints passed object.
 from typing import List
 
 
-def generic_exec(args: List[str]) -> dict | bool:
+def generic_exec(args: List[str]) -> dict:
     """Print given object
 
     params:

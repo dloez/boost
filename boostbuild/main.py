@@ -95,8 +95,7 @@ def get_storage(boost_data: dict, variables: List[str]) -> dict:
                 cmd_output = call_command(cmd, args)
                 if "error" in cmd_output:
                     return cmd_output
-                else:
-                    value = cmd_output["output"]
+                value = cmd_output["output"]
             else:
                 value = boost_data["vars"][clean_var]
         else:
@@ -148,9 +147,6 @@ def main() -> int:
     return 0
 
 
-# TODO: Implemented dynamic commands
-# TODO: Refactor code
-# TODO: GitHub actions
 DEFAULT_BOOST_FILE = "boost.yaml"
 
 if __name__ == "__main__":

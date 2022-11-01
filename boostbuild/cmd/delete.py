@@ -7,7 +7,7 @@ import shutil
 from typing import List
 
 
-def generic_exec(args: List[str]) -> dict | bool:
+def generic_exec(args: List[str]) -> dict:
     """Delete given object which can be a file or a directory
 
     params:
