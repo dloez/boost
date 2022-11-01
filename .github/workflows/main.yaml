@@ -1,0 +1,25 @@
+name: Main CI pipeline
+on:
+  push:
+    branches:
+      - main
+      - feature/test-actions
+  pull_request:
+    branches:
+      - main
+jobs:
+  linting:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Setup project, python and poetry
+        uses: ./setup-action@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run Black
+        run: |
+          poetry run black --check .
+  
