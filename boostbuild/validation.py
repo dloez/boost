@@ -16,7 +16,6 @@ def validate_boost_file(boost_file_path: Path) -> dict:
     returns:
         - dict containing validated boost file or, if found, validation error on error key.
     """
-    # TODO: validate boost file format
     if not boost_file_path.exists():
         return {
             "error": "Boost file does not exist, please read https://github.com/dloez/boost/tree/main#using-boost"
@@ -27,7 +26,8 @@ def validate_boost_file(boost_file_path: Path) -> dict:
 
     if "boost" not in boost_data:
         return {
-            "error": "boost section file does not exist, please read https://github.com/dloez/boost/tree/main#using-boost"
+            "error": "boost section file does not exist, please read \
+                https://github.com/dloez/boost/tree/main#using-boost"
         }
 
     variables = {}

@@ -27,5 +27,9 @@ jobs:
       - name: Run Black
         run: |
           source $VENV
-          black --check .
+          black --check boostbuild
+      - name: Run Pylint
+        run: |
+          source $VENV
+          pylint --rcfile pyproject.toml boostbuild
   

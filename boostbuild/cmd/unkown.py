@@ -18,7 +18,6 @@ def win_exec(command: List[str]) -> dict:
     returns:
         - dict containing output of command on output key or error on error key.
     """
-    # TODO: better error catching
     result = subprocess.run(["powershell", " ".join(command)], check=False)
     if result.stderr:
         return {"error": result.stderr.decode(encoding="unicode_escape")}
@@ -39,7 +38,6 @@ def posix_exec(command: List[str]) -> dict:
     returns:
         - dict containing output of command on output key or error on error key.
     """
-    # TODO: better error catching
     result = subprocess.run(["/bin/bash", "-c", " ".join(command)], check=False)
     if result.stderr:
         return {"error": result.stderr.decode()}

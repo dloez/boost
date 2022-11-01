@@ -23,4 +23,4 @@ build-backend = "poetry.core.masonry.api"
 boost = "boostbuild.main:main"
 
 [tool.pylint.'MESSAGES CONTROL']
-max-line-length = 199
+max-line-length = 119
