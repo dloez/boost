@@ -1,0 +1,23 @@
+name: Main CI pipeline
+on:
+  push:
+    tags:
+      - "v*.*.*"
+jobs:
+  call-main:
+    uses: ./.github/workflows/main.yaml
+  publish:
+    needs: call-main
+    defaults:
+      run:
+        shell: bash
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish package to PyPi
+        env:
+          PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          source $VENV
+          boost publish
+  
