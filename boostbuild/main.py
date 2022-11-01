@@ -23,7 +23,7 @@ def init_parser() -> argparse.ArgumentParser:
         description="Boost is a simple build system that aims to create an interface \
             for shell command substitution across different operative systems.",
     )
-    parser.add_argument("boost", help="Boost target", nargs="?", default="", type=str)
+    parser.add_argument("target", help="Boost target", nargs="?", default="", type=str)
     return parser
 
 
@@ -80,7 +80,7 @@ def get_storage(boost_data: dict, variables: List[str]) -> dict:
     for variable in variables:
         value = ""
         clean_var = variable.replace("{", "").replace("}", "")
-        if clean_var in boost_data["vars"]:
+        if "vars" in boost_data and clean_var in boost_data["vars"]:
             if boost_data["vars"][clean_var].startswith("exec "):
                 cmd, *args = (
                     boost_data["vars"][clean_var].replace("exec ", "").split(" ")
@@ -93,12 +93,9 @@ def get_storage(boost_data: dict, variables: List[str]) -> dict:
             else:
                 value = boost_data["vars"][clean_var]
         else:
-            try:
-                value = os.environ[clean_var]
-            except KeyError:
-                return {
-                    "error": f"variable {clean_var} is not declared neither on vars section or on system env variables"
-                }
+            # variables are already validated that exists on vars section or on
+            # OS environment variable so it is safe to get it
+            value = os.environ[clean_var]
         storage[variable] = value
     return storage
 
@@ -115,16 +112,16 @@ def main() -> int:
         print(Fore.RED + boost_data["error"])
         return 1
 
-    if not args.boost:
-        # if not boost operation was specified, use first one
-        boost = next(iter(boost_data["boost"]))
+    if not args.target:
+        # if not boost target was specified, use first one
+        target = next(iter(boost_data["boost"]))
     else:
-        boost = args.boost
+        target = args.target
 
-    variables = re.findall("{.*?}", boost_data["boost"][boost])
-    commands = boost_data["boost"][boost].strip().split("\n")
+    variables = re.findall("{.*?}", boost_data["boost"][target])
+    commands = boost_data["boost"][target].strip().split("\n")
     total_commands = len(commands)
-    print(Fore.CYAN + f"Boosting {boost} - {total_commands} commands")
+    print(Fore.CYAN + f"Boosting {target} - {total_commands} commands")
 
     storage = get_storage(boost_data, variables)
     if "error" in storage:
