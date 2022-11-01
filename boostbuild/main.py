@@ -23,7 +23,14 @@ def init_parser() -> argparse.ArgumentParser:
         description="Boost is a simple build system that aims to create an interface \
             for shell command substitution across different operative systems.",
     )
-    parser.add_argument("target", help="Boost target", nargs="?", default="", type=str)
+    parser.add_argument("target", type=str, help="Boost target", nargs="?", default="")
+    parser.add_argument(
+        "-f",
+        "--file",
+        type=Path,
+        help="Boost file path",
+        default=Path(DEFAULT_BOOST_FILE),
+    )
     return parser
 
 
@@ -107,7 +114,7 @@ def main() -> int:
     parser = init_parser()
     args = parser.parse_args()
 
-    boost_data = validate_boost_file(BOOST_FILE)
+    boost_data = validate_boost_file(args.file)
     if "error" in boost_data:
         print(Fore.RED + boost_data["error"])
         return 1
@@ -141,8 +148,10 @@ def main() -> int:
     return 0
 
 
-# TODO: allow overriding BOOST_FILE path with -f arg
-BOOST_FILE = Path("boost.yaml")
+# TODO: Implemented dynamic commands
+# TODO: Refactor code
+# TODO: GitHub actions
+DEFAULT_BOOST_FILE = "boost.yaml"
 
 if __name__ == "__main__":
     sys.exit(main())
