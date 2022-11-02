@@ -7,15 +7,21 @@ on:
     branches:
       - main
   workflow_call:
+    outputs:
+      venv:
+        description: "Python virtual environment"
+        value: ${{ jobs.setup.outputs.venv }}
 jobs:
-  linting:
+  setup:
+    defaults:
+      run:
+        shell: bash
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
-    defaults:
-      run:
-        shell: bash
+    outputs:
+      venv: ${{ steps.generate-outputs.outputs.venv }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository
@@ -24,12 +30,26 @@ jobs:
         uses: ./setup-action
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Generate outputs
+        id: generate-outputs
+        run: echo "venv=$VENV" >> $GITHUB_OUTPUT
+  linting:
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+    needs: setup
+    runs-on: ${{ matrix.os }}
+    steps:
       - name: Run Black
         run: |
-          source $VENV
+          source ${{ needs.setup.outputs.venv }}
           black --check boostbuild
       - name: Run Pylint
         run: |
-          source $VENV
+          source ${{ needs.setup.outputs.venv }}
           pylint --rcfile pyproject.toml boostbuild
   
