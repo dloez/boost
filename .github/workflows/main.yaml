@@ -7,10 +7,6 @@ on:
     branches:
       - main
   workflow_call:
-    outputs:
-      venv:
-        description: "Python virtual environment"
-        value: ${{ jobs.setup.outputs.venv }}
 jobs:
   setup:
     defaults:
@@ -20,8 +16,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.7", "3.8", "3.9", "3.10"]
-    outputs:
-      venv: ${{ steps.generate-outputs.outputs.venv }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository
@@ -30,9 +24,6 @@ jobs:
         uses: ./setup-action
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Generate outputs
-        id: generate-outputs
-        run: echo "venv=$VENV" >> $GITHUB_OUTPUT
   linting:
     defaults:
       run:
@@ -46,10 +37,12 @@ jobs:
     steps:
       - name: Run Black
         run: |
-          source ${{ needs.setup.outputs.venv }}
+          source .venv/scripts/activate
           black --check boostbuild
+        if: runner.os == 'Windows'
       - name: Run Pylint
         run: |
-          source ${{ needs.setup.outputs.venv }}
+          source .venv/bin/activate
           pylint --rcfile pyproject.toml boostbuild
+        if: runner.os != 'Windows'
   

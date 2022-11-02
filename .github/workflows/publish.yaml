@@ -18,6 +18,6 @@ jobs:
           PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
           PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
-          source ${{ needs.call-main.outputs.venv }}
+          source .venv/bin/activate
           boost publish
   
