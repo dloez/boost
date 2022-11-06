@@ -8,7 +8,7 @@ on:
       - main
   workflow_call:
 jobs:
-  setup:
+  linting:
     defaults:
       run:
         shell: bash
@@ -24,33 +24,12 @@ jobs:
         uses: ./setup-action
         with:
           python-version: ${{ matrix.python-version }}
-  linting:
-    defaults:
-      run:
-        shell: bash
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
-    needs: setup
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
       - name: Run Black
         run: |
-          source .venv/scripts/activate
+          source $VENV
           black --check boostbuild
-        if: runner.os == 'Windows'
       - name: Run Pylint
         run: |
-          source .venv/bin/activate
+          source $VENV
           pylint --rcfile pyproject.toml boostbuild
-        if: runner.os != 'Windows'
   
