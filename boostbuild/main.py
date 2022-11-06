@@ -137,7 +137,10 @@ def main() -> int:
     for i, cmd in enumerate(commands):
         variables = re.findall("{.*?}", cmd)
         for var in variables:
-            cmd = cmd.replace(var, storage[var])
+            value = "****"
+            if "secret" not in var:
+                value = storage[var]
+            cmd = cmd.replace(var, value)
         print(Fore.GREEN + f"-> [{i + 1}/{total_commands}] - {cmd}")
         cmd, *args = cmd.split(" ")
         output = call_command(cmd, args)
