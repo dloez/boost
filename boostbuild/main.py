@@ -149,7 +149,7 @@ def main() -> int:
         print(Fore.GREEN + f"-> [{i + 1}/{total_commands}] - {clean_cmd}")
         cmd, *args = cmd.split(" ")
         output = call_command(cmd, args)
-        
+
         if "error" in output:
             print(Fore.RED + output["error"])
         print(Fore.WHITE + output["output"])
