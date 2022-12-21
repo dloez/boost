@@ -93,7 +93,7 @@ def get_storage(boost_data: dict, variables: List[str]) -> dict:
                     boost_data["vars"][clean_var].replace("exec ", "").split(" ")
                 )
                 cmd_output = call_command(cmd, args)
-                if "error" in cmd_output:
+                if "error" in cmd_output and cmd_output["error"]:
                     return cmd_output
                 value = cmd_output["output"]
             else:
