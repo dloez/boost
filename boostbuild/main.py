@@ -136,17 +136,23 @@ def main() -> int:
 
     for i, cmd in enumerate(commands):
         variables = re.findall("{.*?}", cmd)
+        clean_cmd = cmd
         for var in variables:
-            value = "****"
+            print_value = "****"
             if "secret" not in var:
-                value = storage[var]
-            cmd = cmd.replace(var, value)
-        print(Fore.GREEN + f"-> [{i + 1}/{total_commands}] - {cmd}")
+                print_value = storage[var]
+            # command containing secret vars values
+            cmd = cmd.replace(var, storage[var])
+            # command containing secret vars replaced values for printing
+            clean_cmd = clean_cmd.replace(var, print_value)
+
+        print(Fore.GREEN + f"-> [{i + 1}/{total_commands}] - {clean_cmd}")
         cmd, *args = cmd.split(" ")
         output = call_command(cmd, args)
+        
         if "error" in output:
             print(Fore.RED + output["error"])
-            return 1
+        print(Fore.WHITE + output["output"])
     return 0
 
 
