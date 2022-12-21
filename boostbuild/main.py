@@ -150,9 +150,10 @@ def main() -> int:
         cmd, *args = cmd.split(" ")
         output = call_command(cmd, args)
 
-        if "error" in output:
+        if "error" in output and output["error"]:
             print(Fore.RED + output["error"])
-        print(Fore.WHITE + output["output"])
+        if "output" in output and output["output"]:
+            print(Fore.WHITE + output["output"])
     return 0
 
 
