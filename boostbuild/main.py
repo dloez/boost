@@ -34,7 +34,7 @@ def init_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def call_command(cmd: str, args: List[str]) -> dict:
+def call_command(cmd: str, args: List[str], capture_output=False) -> dict:
     """Execute given command.
 
     Given command is dyanmically imported from cmd module.
@@ -44,6 +44,7 @@ def call_command(cmd: str, args: List[str]) -> dict:
     params:
         - cmd: command that needs to be executed.
         - args: command arguments.
+        - capture_output: capture output of executed command on stdout and stderr.
 
     returns:
         - dict containing executed command output on output key or error on error key.
@@ -59,13 +60,13 @@ def call_command(cmd: str, args: List[str]) -> dict:
 
     # validate if command has implement a generic execution
     if hasattr(command, "generic_exec"):
-        return command.generic_exec(args)
+        return command.generic_exec(args, capture_output)
 
     # command has different behaviour for windows/posix
     os_to_function = {"nt": "win_exec", "posix": "posix_exec"}
     try:
         call = os_to_function[os.name]
-        return getattr(command, call)(args)
+        return getattr(command, call)(args, capture_output)
     except KeyError:
         return {"error": "unsuported OS"}
 
@@ -92,7 +93,7 @@ def get_storage(boost_data: dict, variables: List[str]) -> dict:
                 cmd, *args = (
                     boost_data["vars"][clean_var].replace("exec ", "").split(" ")
                 )
-                cmd_output = call_command(cmd, args)
+                cmd_output = call_command(cmd, args, True)
                 if "error" in cmd_output and cmd_output["error"]:
                     return cmd_output
                 value = cmd_output["output"]
@@ -148,12 +149,7 @@ def main() -> int:
 
         print(Fore.GREEN + f"-> [{i + 1}/{total_commands}] - {clean_cmd}")
         cmd, *args = cmd.split(" ")
-        output = call_command(cmd, args)
-
-        if "error" in output and output["error"]:
-            print(Fore.RED + output["error"])
-        if "output" in output and output["output"]:
-            print(Fore.WHITE + output["output"])
+        call_command(cmd, args)
     return 0
 
 
