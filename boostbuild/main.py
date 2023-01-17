@@ -5,6 +5,7 @@ from pathlib import Path
 import argparse
 import os
 import re
+import signal
 from typing import List
 
 from colorama import init, Fore
@@ -107,9 +108,17 @@ def get_storage(boost_data: dict, variables: List[str]) -> dict:
     return storage
 
 
+def handler(_signum, _frame):
+    """
+    Handle CTRL-C so the exit signal is sent to the process being executed by boost rather that to boost itself
+    TODO: can we maybe handle multiple signals to send to boost itself.
+    """
+
+
 def main() -> int:
     """Main function"""
     init(autoreset=True)
+    signal.signal(signal.SIGINT, handler)
 
     parser = init_parser()
     args = parser.parse_args()
