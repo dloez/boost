@@ -7,10 +7,10 @@ import os
 import re
 import signal
 from typing import List
-
 from colorama import init, Fore
 
 from boostbuild.validation import validate_boost_file
+from boostbuild.signal_handler import SignalHandler
 
 
 def init_parser() -> argparse.ArgumentParser:
@@ -108,17 +108,12 @@ def get_storage(boost_data: dict, variables: List[str]) -> dict:
     return storage
 
 
-def handler(_signum, _frame):
-    """
-    Handle CTRL-C so the exit signal is sent to the process being executed by boost rather that to boost itself
-    TODO: can we maybe handle multiple signals to send to boost itself.
-    """
-
-
 def main() -> int:
     """Main function"""
     init(autoreset=True)
-    signal.signal(signal.SIGINT, handler)
+
+    signal_handler = SignalHandler()
+    signal.signal(signal.SIGINT, signal_handler.handler)
 
     parser = init_parser()
     args = parser.parse_args()
@@ -163,6 +158,7 @@ def main() -> int:
 
 
 DEFAULT_BOOST_FILE = "boost.yaml"
+MAX_SIGINT_COUNT = 3
 
 if __name__ == "__main__":
     sys.exit(main())
