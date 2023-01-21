@@ -1,12 +1,10 @@
-"""Utilities to generate a context from a Boost file.
-"""
+"""Utilities to generate a context from a Boost file."""
 import os
 import re
 import importlib
 import yaml
 from pathlib import Path
 
-from boostbuild.errors import build_error_hinting
 from boostbuild.errors import FILE_FOLDER_DOESNT_EXIST, UNSUPORTED_OS
 from boostbuild.errors import (
     MISSING_BOOST_SECTION,
@@ -27,9 +25,10 @@ class Variable:
     ) -> None:
         """
         Arguments:
-            - name: variable name.
-            - value: variable content, it can be a command that needs to be executed to get its value.
-            - attributes: variable attributes like `secret`.
+            - `name`: variable name.
+            - `value`: variable content, it can be a command that needs to be executed to get its value.
+            - `attributes`: variable attributes like `secret`.
+            - `inner_variables`:
         """
         self.name = name
         self.value = value
@@ -39,7 +38,7 @@ class Variable:
     def get_value(self, secret: bool = False) -> str:
         """
         Arguments:
-            - secret: if a variable has the `secret` attribute, force it to use it. Defaults to `False`.
+            - `secret`: if a variable has the `secret` attribute, force it to use it. Defaults to `False`.
         """
         if secret and "secret" in self.attributes:
             return "*****"
@@ -52,9 +51,9 @@ class Command:
     def __init__(self, command: str, variables: dict, args: list) -> None:
         """
         Arguments:
-            - command: command string.
-            - variables: dictionary containing required command `Variable`s.
-            - args: command arguments list.
+            - `command`: command string.
+            - `variables`: `dict` containing required command `Variable`s.
+            - `args`: command arguments list.
         """
         self.command: str = command
         self.variables: dict = variables
@@ -65,8 +64,8 @@ class Command:
         Call command.
 
         Arguments:
-            - capture_output: bool as True if the command output needs to be captured, False otherwise.
-            Defaults to False.
+            - `capture_output`: `bool` as `True` if the command output needs to be captured, `False` otherwise.
+            Defaults to `False`.
         """
         try:
             command = importlib.import_module(f"boostbuild.cmd.{self.command}")
@@ -98,10 +97,10 @@ class Command:
         arguments. Then replace all found variables by their values.
 
         Arguments:
-            - secret: if a variable has the `secret` attribute, force it to use it. Defaults to `False`.
+            - `secret`: if a variable has the `secret` attribute, force it to use it. Defaults to `False`.
 
         Returns:
-            - list containing command arguments with variables replaces by their values.
+            - `list` containing command arguments with variables replaces by their values.
         """
         replaced_variables = []
         for arg in self.args:
@@ -125,8 +124,8 @@ def load_context(boost_file: Path, boost_target: str = "") -> dict:
         - commands and arguments
 
     Arguments:
-        - boost_file: `boost.yaml` file.
-        - boost_target: boost target that contains the commands that need to be executed.
+        - `boost_file`: 'boost.yaml' file.
+        - `boost_target`: boost target that contains the commands that need to be executed.
     """
     context = {}
 
@@ -163,7 +162,7 @@ def load_context(boost_file: Path, boost_target: str = "") -> dict:
     commands: list = []
     for str_cmd in str_commands:
         # now that we know that the boost target commands require variables, check if vars section
-        # exists on the boost file.
+        # exists on the boost file
         if "vars" not in boost_data:
             context["error"] = MISSING_VARS_SECTION
             return context
@@ -219,7 +218,7 @@ def check_inner_variables(
     """
     outputs = []
     # if variable was already allocated in `general_variables`, return it and skip the process
-    # so the same `Variable` object can be shared with all variables with request it.
+    # so the same `Variable` object can be shared with all variables with request it
     if variable_key in general_variables:
         command_variables[variable_key] = general_variables[variable_key]
         outputs.append(general_variables[variable_key])

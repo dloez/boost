@@ -14,7 +14,7 @@ def init_parser() -> argparse.ArgumentParser:
     """Initialize argument parser.
 
     returns:
-        - ArgumentParser with configured arguments.
+        - `ArgumentParser` with configured arguments.
     """
     parser = argparse.ArgumentParser(
         prog="Boost",
@@ -33,7 +33,7 @@ def init_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """Main function"""
+    """Main function."""
     init(autoreset=True)
 
     signal_handler = SignalHandler()

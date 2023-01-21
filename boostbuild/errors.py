@@ -12,12 +12,12 @@ def build_error_hinting(error, position, message) -> str:
     ```
 
     params:
-        - error: str which contains the error.
-        - position: character where the error is located.
-        - message: error message which should be printed out with.
+        - `error`: `str` which contains the error.
+        - `position`: character where the error is located.
+        - `message`: error message which should be printed out with.
 
     returns:
-        - string containing error and hinting, similar to above example.
+        - `str` containing error and hinting, similar to above example.
     """
     error += "\n"
     for i in range(len(error.strip())):
