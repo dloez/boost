@@ -1,0 +1,6 @@
+vars:
+  - example: '{example2}'
+  - example2: '{example3}'
+  - example3: '{example3}'
+boost:
+  dev: echo {example} {example2}

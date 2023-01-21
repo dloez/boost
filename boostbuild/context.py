@@ -2,11 +2,14 @@
 import os
 import re
 import importlib
-import yaml
 from pathlib import Path
+from typing import Union
+import yaml
 
-from boostbuild.errors import FILE_FOLDER_DOESNT_EXIST, UNSUPORTED_OS
+from boostbuild.errors import build_error_hinting
 from boostbuild.errors import (
+    FILE_FOLDER_DOESNT_EXIST,
+    UNSUPORTED_OS,
     MISSING_BOOST_SECTION,
     MISSING_VARS_SECTION,
     MISSING_TARGET,
@@ -174,16 +177,15 @@ def load_context(boost_file: Path, boost_target: str = "") -> dict:
         str_variables = re.findall("(?<={)(.*?)(?=})", str_cmd)
         command_variables: dict = {}
         for str_var in str_variables:
-            variables = check_inner_variables(
-                boost_data, general_variables, command_variables, str_var
+            variable = check_inner_variables(
+                boost_data, general_variables, command_variables, str_var, str_cmd
             )
 
             # the storage proceadure on `command_variables` and `general_variables` is already handled inside
             # the `check_inner_variables` process so we just need to handle the errors backtrace
-            for variable in variables:
-                if isinstance(variable, str):
-                    context["error"] = variable
-                    return context
+            if isinstance(variable, str):
+                context["error"] = variable
+                return context
 
         str_cmd = str_cmd.split(" ")
         command = Command(
@@ -197,8 +199,12 @@ def load_context(boost_file: Path, boost_target: str = "") -> dict:
 
 
 def check_inner_variables(
-    boost_data, general_variables, command_variables, variable_key: str
-) -> list:
+    boost_data: dict,
+    general_variables: dict,
+    command_variables: dict,
+    variable_key: str,
+    command_str: str,
+) -> Union[Variable, str]:
     """
     Recursively create new variables, this means that if the variable `variable_key`
     requests another variable, the function will call itself to load it repeating the process
@@ -216,13 +222,11 @@ def check_inner_variables(
             - `Variable`: created variables.
             - `str`: error triggered while processing the creation process.
     """
-    outputs = []
     # if variable was already allocated in `general_variables`, return it and skip the process
     # so the same `Variable` object can be shared with all variables with request it
     if variable_key in general_variables:
         command_variables[variable_key] = general_variables[variable_key]
-        outputs.append(general_variables[variable_key])
-        return outputs
+        return general_variables[variable_key]
 
     # find `variable_key` on boost `vars` section
     found_variable = next(
@@ -231,30 +235,31 @@ def check_inner_variables(
 
     # if the varibale was not found, return the error `MISSING_VARIABLE`
     if not found_variable:
-        outputs.append(MISSING_VARIABLE.format(variable_key))
-        return outputs
+        return MISSING_VARIABLE.format(variable_key)
 
     # if the variable value has more variables inside, call itself with the new found variables
     str_variables = re.findall("(?<={)(.*?)(?=})", found_variable[variable_key])
+    variables = []
     for str_variable in str_variables:
         # check if variable is requesting itself, which will end up on an infinite loop
         if str_variable == variable_key:
-            outputs.append(SELF_VAR_REQUEST.format(variable_key))
-            return outputs
+            return SELF_VAR_REQUEST.format(variable_key)
 
-        inner_variables = check_inner_variables(
-            boost_data, general_variables, command_variables, str_variable
+        inner_variable = check_inner_variables(
+            boost_data,
+            general_variables,
+            command_variables,
+            str_variable,
+            found_variable[variable_key],
         )
 
-        # check for errors on inner variables
-        for inner_variable in inner_variables:
-            if isinstance(inner_variable, str):
-                # in case of error, add the current variable so we can generate a traceback
-                # of which variable requested a missing one
-                inner_variable += f" from {variable_key}"
-                outputs.append(inner_variable)
-                return outputs
-            outputs.append(inner_variable)
+        # check for error on inner variable
+        if isinstance(inner_variable, str):
+            # in case of error, add the current variable so we can generate a traceback
+            # of which variable requested a missing one
+            return f"{inner_variable} from {variable_key}"
+        variables.append(inner_variable)
+            
 
     # load found variable attributes and create new variable with inner variables
     attributes = ""
@@ -264,12 +269,11 @@ def check_inner_variables(
         name=variable_key,
         value=found_variable[variable_key],
         attributes=attributes,
-        inner_variables=outputs,
+        inner_variables=variables,
     )
     # register variable on
     #   - `command_variables`: to store command required variables
     #   - `general_variables`: for resuse pourpouses
     command_variables[variable_key] = variable
     general_variables[variable_key] = variable
-    outputs.append(variable)
-    return outputs
+    return variable
