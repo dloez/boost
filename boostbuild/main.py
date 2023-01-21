@@ -45,9 +45,12 @@ def main() -> int:
     if "error" in context:
         print(Fore.RED + context["error"])
         return 1
-    print(context)
-    for name, value in context["vars"].items():
-        print(name, value.inner_variables)
+
+    total_commands = len(context["commands"])
+    print(Fore.CYAN + f'Boosting {context["target"]} - {total_commands} commands')
+    for i, command in enumerate(context["commands"]):
+        print(Fore.GREEN + f"-> [{i + 1}/{total_commands}] - {command}")
+        command.call()
     return 0
 
 

@@ -12,12 +12,12 @@ def win_exec(command: List[str], capture_output=False) -> dict:
 
     This command is executed using powershell.
 
-    params:
-        - command: list containing command that needs to be executed.
-        - capture_output: capture output of executed command on stdout and stderr.
+    Arguments:
+        - command: list containing command and its arguments.
+        - `capture_output`: determine if the command output should be printed, or captured.
 
-    returns:
-        - dict containing output of command on output key or error on error key.
+    Returns:
+        - `dict` containing output of command on output key or error on error key.
     """
     result = subprocess.run(
         ["powershell", " ".join(command)],
@@ -35,14 +35,14 @@ def win_exec(command: List[str], capture_output=False) -> dict:
 def posix_exec(command: List[str], capture_output=False) -> dict:
     """Execute given command.
 
-    This command is executed using bash.
+    This command is executed using powershell.
 
-    params:
-        - command: list containing command that needs to be executed.
-        - capture_output: capture output of executed command on stdout and stderr.
+    Arguments:
+        - command: list containing command and its arguments.
+        - `capture_output`: determine if the command output should be printed, or captured.
 
-    returns:
-        - dict containing output of command on output key or error on error key.
+    Returns:
+        - `dict` containing output of command on output key or error on error key.
     """
     result = subprocess.run(
         ["/bin/bash", "-c", " ".join(command)],

@@ -35,6 +35,8 @@ MISSING_VARS_SECTION = "the used boost.yaml file does not have a 'vars' section 
 EMPTY_BOOST_SECTION = "the used boost.yaml file 'boost' section is empty"
 EMPTY_VARS_SECTION = "the used boost.yaml file 'vars' section is empty and you are trying to use variables"
 MISSING_TARGET = "the used boost target '{}' is missing on the 'boost' section"
-MISSING_VARIABLE = "the variable '{}' is missing on the 'vars' section"
+MISSING_VARIABLE = "the following variable is missing on the 'vars' section: '{}'"
 UNSUPORTED_OS = "the command '{}' does not support the current used OS"
-SELF_VAR_REQUEST = "the variable '{}' is requesting itself, which is not allowed"
+SELF_VAR_REQUEST = (
+    "the following variable is requesting itself, which is not allowed: '{}'"
+)

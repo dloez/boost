@@ -24,7 +24,7 @@ class Variable:
     """Represent a boost variable required by a command."""
 
     def __init__(
-        self, name: str, value: str, attributes: str, inner_variables: list
+        self, name: str, value: str, attributes: str, inner_variables: dict
     ) -> None:
         """
         Arguments:
@@ -45,6 +45,17 @@ class Variable:
         """
         if secret and "secret" in self.attributes:
             return "*****"
+
+        if "exec" in self.attributes:
+            str_cmd = self.value.split(" ")
+            command = Command(str_cmd[0], self.inner_variables, str_cmd[1:])
+            output = command.call(capture_output=True)
+            return output["output"]
+
+        variable = find_variables_in(self.value)
+        if variable:
+            return self.inner_variables[variable[0]].get_value(secret)
+
         return self.value
 
 
@@ -68,7 +79,7 @@ class Command:
 
         Arguments:
             - `capture_output`: `bool` as `True` if the command output needs to be captured, `False` otherwise.
-            Defaults to `False`.
+                Defaults to `False`.
         """
         try:
             command = importlib.import_module(f"boostbuild.cmd.{self.command}")
@@ -174,7 +185,7 @@ def load_context(boost_file: Path, boost_target: str = "") -> dict:
             context["error"] = EMPTY_VARS_SECTION
             return context
 
-        str_variables = re.findall("(?<={)(.*?)(?=})", str_cmd)
+        str_variables = find_variables_in(str_cmd)
         command_variables: dict = {}
         for str_var in str_variables:
             variable = check_inner_variables(
@@ -203,7 +214,7 @@ def check_inner_variables(
     general_variables: dict,
     command_variables: dict,
     variable_key: str,
-    command_str: str,
+    variable_found_in: str,
 ) -> Union[Variable, str]:
     """
     Recursively create new variables, this means that if the variable `variable_key`
@@ -235,15 +246,26 @@ def check_inner_variables(
 
     # if the varibale was not found, return the error `MISSING_VARIABLE`
     if not found_variable:
-        return MISSING_VARIABLE.format(variable_key)
+        found_in: str = f"{variable_key}: {variable_found_in}"
+        return build_error_hinting(
+            found_in,
+            found_in.index("{" + variable_key + "}") + 1,
+            MISSING_VARIABLE.format(variable_key),
+        )
 
     # if the variable value has more variables inside, call itself with the new found variables
-    str_variables = re.findall("(?<={)(.*?)(?=})", found_variable[variable_key])
-    variables = []
+    str_variables = find_variables_in(found_variable[variable_key])
+    variables: dict = {}
     for str_variable in str_variables:
         # check if variable is requesting itself, which will end up on an infinite loop
         if str_variable == variable_key:
-            return SELF_VAR_REQUEST.format(variable_key)
+            found_in: str = f"{variable_key}: {found_variable[variable_key]}"
+            error = build_error_hinting(
+                found_in,
+                found_in.index("{" + str_variable + "}") + 1,
+                SELF_VAR_REQUEST.format(variable_key),
+            )
+            return error
 
         inner_variable = check_inner_variables(
             boost_data,
@@ -257,9 +279,13 @@ def check_inner_variables(
         if isinstance(inner_variable, str):
             # in case of error, add the current variable so we can generate a traceback
             # of which variable requested a missing one
-            return f"{inner_variable} from {variable_key}"
-        variables.append(inner_variable)
-            
+            found_in: str = f"{variable_key}: {found_variable[variable_key]}"
+            return build_error_hinting(
+                found_in,
+                found_in.index("{" + str_variable + "}") + 1,
+                f"{inner_variable} <-- '{variable_key}'",
+            )
+        variables[str_variable] = inner_variable
 
     # load found variable attributes and create new variable with inner variables
     attributes = ""
@@ -277,3 +303,16 @@ def check_inner_variables(
     command_variables[variable_key] = variable
     general_variables[variable_key] = variable
     return variable
+
+
+def find_variables_in(content: str):
+    """
+    Search for variables on the given `content` applying a regex pattern.
+
+    Arguments:
+        - `content`: `str` where the regex pattern should be applied to.
+
+    Returns:
+        - a list of found matches.
+    """
+    return re.findall("(?<={)(.*?)(?=})", content)
