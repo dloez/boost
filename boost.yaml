@@ -1,3 +1,7 @@
+vars:
+  - pypi_username: VALUE
+  - pypi_password: VALUE
+    attributes: secret 
 boost:
   publish: |
-    poetry publish --build --username {PYPI_USERNAME} --password {PYPI_PASSWORD}
+    poetry publish --build --username {pypi_username} --password {pypi_password}
