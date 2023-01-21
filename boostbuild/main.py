@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 import argparse
 import signal
-from typing import List
 from colorama import init, Fore
 
 from boostbuild.context import load_context
