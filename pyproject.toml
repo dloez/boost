@@ -4,6 +4,15 @@ version = "0.2.0"
 description = "Boost is a simple build system that aims to create an interface for shell command substitution across different operative systems."
 authors = ["David Lopez <davidlopez.hellin@outlook.com>"]
 readme = "README.md"
+homepage = "https://github.com/dloez/boost"
+repository = "https://github.com/dloez/boost"
+documentation = "https://github.com/dloez/boost/blob/main/README.md"
+keywords = ["build", "multiplatform"]
+license = "Apache-2.0"
+include = [
+    "LICENSE",
+    "README.md",
+]
 
 [tool.poetry.dependencies]
 python = "^3.7.2"
