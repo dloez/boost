@@ -20,6 +20,7 @@ from boostbuild.errors import (
 )
 
 
+# pylint: disable=too-few-public-methods
 class Variable:
     """Represent a boost variable required by a command."""
 
@@ -130,6 +131,7 @@ class Command:
         return f"{self.command} {' '.join(self.get_arguments(secret=True))}"
 
 
+# pylint: disable=too-many-return-statements
 def load_context(boost_file: Path, boost_target: str = "") -> dict:
     """
     Generate boost context from the given Boost file.
