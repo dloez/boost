@@ -15,13 +15,16 @@ from boostbuild.errors import (
     MISSING_VARIABLE,
     EMPTY_BOOST_SECTION,
     EMPTY_VARS_SECTION,
+    SELF_VAR_REQUEST,
 )
 
 
 class Variable:
     """Represent a boost variable required by a command."""
 
-    def __init__(self, name: str, value: str, attributes: str) -> None:
+    def __init__(
+        self, name: str, value: str, attributes: str, inner_variables: list
+    ) -> None:
         """
         Arguments:
             - name: variable name.
@@ -31,6 +34,7 @@ class Variable:
         self.name = name
         self.value = value
         self.attributes = attributes
+        self.inner_variables = inner_variables
 
     def get_value(self, secret: bool = False) -> str:
         """
@@ -168,30 +172,19 @@ def load_context(boost_file: Path, boost_target: str = "") -> dict:
             context["error"] = EMPTY_VARS_SECTION
             return context
 
-        str_variales = re.findall("(?<={)(.*?)(?=})", str_cmd)
+        str_variables = re.findall("(?<={)(.*?)(?=})", str_cmd)
         command_variables: dict = {}
-        for str_var in str_variales:
-            if str_var in general_variables:
-                command_variables[str_var] = general_variables[str_var]
-                continue
-
-            found_variable = next(
-                (var for var in boost_data["vars"] if str_var in var), None
+        for str_var in str_variables:
+            variables = check_inner_variables(
+                boost_data, general_variables, command_variables, str_var
             )
-            if not found_variable:
-                context["error"] = build_error_hinting(
-                    error=str_cmd,
-                    position=str_cmd.index("{" + str_var + "}") + 1,
-                    message=MISSING_VARIABLE.format(str_var),
-                )
-                return context
 
-            attributes = ""
-            if "attributes" in found_variable:
-                attributes = found_variable["attributes"]
-            variable = Variable(str_var, found_variable[str_var], attributes)
-            general_variables[str_var] = variable
-            command_variables[str_var] = variable
+            # the storage proceadure on `command_variables` and `general_variables` is already handled inside
+            # the `check_inner_variables` process so we just need to handle the errors backtrace
+            for variable in variables:
+                if isinstance(variable, str):
+                    context["error"] = variable
+                    return context
 
         str_cmd = str_cmd.split(" ")
         command = Command(
@@ -202,3 +195,82 @@ def load_context(boost_file: Path, boost_target: str = "") -> dict:
     context["vars"] = general_variables
     context["commands"] = commands
     return context
+
+
+def check_inner_variables(
+    boost_data, general_variables, command_variables, variable_key: str
+) -> list:
+    """
+    Recursively create new variables, this means that if the variable `variable_key`
+    requests another variable, the function will call itself to load it repeating the process
+    if the `variable_key` variable do also require another variable.
+
+    All found variables are stored in `command_variables` and `general_variables`.
+
+    Arguments:
+        - `boost_data`: boost yaml file content.
+        - `general_variables`: general varibales required by all the boost target commands.
+        - `variable_key`: varible that needs to be created.
+
+    Returns:
+        - list of `Variable` or `str` where:
+            - `Variable`: created variables.
+            - `str`: error triggered while processing the creation process.
+    """
+    outputs = []
+    # if variable was already allocated in `general_variables`, return it and skip the process
+    # so the same `Variable` object can be shared with all variables with request it.
+    if variable_key in general_variables:
+        command_variables[variable_key] = general_variables[variable_key]
+        outputs.append(general_variables[variable_key])
+        return outputs
+
+    # find `variable_key` on boost `vars` section
+    found_variable = next(
+        (var for var in boost_data["vars"] if variable_key in var), None
+    )
+
+    # if the varibale was not found, return the error `MISSING_VARIABLE`
+    if not found_variable:
+        outputs.append(MISSING_VARIABLE.format(variable_key))
+        return outputs
+
+    # if the variable value has more variables inside, call itself with the new found variables
+    str_variables = re.findall("(?<={)(.*?)(?=})", found_variable[variable_key])
+    for str_variable in str_variables:
+        # check if variable is requesting itself, which will end up on an infinite loop
+        if str_variable == variable_key:
+            outputs.append(SELF_VAR_REQUEST.format(variable_key))
+            return outputs
+
+        inner_variables = check_inner_variables(
+            boost_data, general_variables, command_variables, str_variable
+        )
+
+        # check for errors on inner variables
+        for inner_variable in inner_variables:
+            if isinstance(inner_variable, str):
+                # in case of error, add the current variable so we can generate a traceback
+                # of which variable requested a missing one
+                inner_variable += f" from {variable_key}"
+                outputs.append(inner_variable)
+                return outputs
+            outputs.append(inner_variable)
+
+    # load found variable attributes and create new variable with inner variables
+    attributes = ""
+    if "attributes" in found_variable:
+        attributes = found_variable["attributes"]
+    variable = Variable(
+        name=variable_key,
+        value=found_variable[variable_key],
+        attributes=attributes,
+        inner_variables=outputs,
+    )
+    # register variable on
+    #   - `command_variables`: to store command required variables
+    #   - `general_variables`: for resuse pourpouses
+    command_variables[variable_key] = variable
+    general_variables[variable_key] = variable
+    outputs.append(variable)
+    return outputs
