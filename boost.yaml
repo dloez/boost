@@ -3,5 +3,5 @@ vars:
   - pypi_password: VALUE
     attributes: secret 
 boost:
-  publish: |
-    poetry publish --build --username {pypi_username} --password {pypi_password}
+  lint: poetry run pylint --rcfile pyproject.toml boostbuild
+  publish: poetry publish --build --username {pypi_username} --password {pypi_password}

@@ -41,7 +41,7 @@ def main() -> int:
     parser = init_parser()
     args = parser.parse_args()
 
-    context = load_context(args.file)
+    context = load_context(args.file, args.target)
     if "error" in context:
         print(Fore.RED + context["error"])
         return 1

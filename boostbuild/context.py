@@ -1,24 +1,11 @@
 """Utilities to generate a context from a Boost file."""
 import os
-import re
 import importlib
 from pathlib import Path
-from typing import Union
-import yaml
 
-from boostbuild.errors import build_error_hinting
-from boostbuild.errors import (
-    FILE_FOLDER_DOESNT_EXIST,
-    UNSUPORTED_OS,
-    MISSING_BOOST_SECTION,
-    MISSING_VARS_SECTION,
-    MISSING_TARGET,
-    MISSING_VARIABLE,
-    EMPTY_BOOST_SECTION,
-    EMPTY_VARS_SECTION,
-    SELF_VAR_REQUEST,
-)
-
+from boostbuild.utils import find_variables_in
+from boostbuild.validations import validate_boost_file, validate_boost_target
+from boostbuild.errors import UNSUPORTED_OS
 
 # pylint: disable=too-few-public-methods
 class Variable:
@@ -131,8 +118,7 @@ class Command:
         return f"{self.command} {' '.join(self.get_arguments(secret=True))}"
 
 
-# pylint: disable=too-many-return-statements
-def load_context(boost_file: Path, boost_target: str = "") -> dict:
+def load_context(boost_file: Path, boost_target: str) -> dict:
     """
     Generate boost context from the given Boost file.
     Boost context is a dictionary containing all the information required to execute a target like
@@ -144,61 +130,24 @@ def load_context(boost_file: Path, boost_target: str = "") -> dict:
         - `boost_target`: boost target that contains the commands that need to be executed.
     """
     context = {}
-
-    # run previous validations to start parsing commands
-    # validate that Boost file exists
-    if not boost_file.exists():
-        context["error"] = FILE_FOLDER_DOESNT_EXIST.format(boost_file)
+    output = validate_boost_file(boost_file, boost_target)
+    if isinstance(output, str):
+        context["error"] = output
         return context
 
-    # load file
-    with open(boost_file, "r", encoding="utf8") as handler:
-        boost_data = yaml.load(handler, Loader=yaml.SafeLoader)
-
-    # check boost section
-    if "boost" not in boost_data:
-        context["error"] = MISSING_BOOST_SECTION
-        return context
-
-    # check empty boost section
-    if not boost_data["boost"]:
-        context["error"] = EMPTY_BOOST_SECTION
-        return context
-
-    # check given boost target
-    if not boost_target:
-        boost_target = list(boost_data["boost"].keys())[0]
-    elif boost_target not in boost_data["boost"]:
-        context["error"] = MISSING_TARGET.format(boost_target)
-        return context
-
+    boost_data: dict = output
+    boost_target = validate_boost_target(boost_data, boost_target)
     context["target"] = boost_target
     str_commands: str = boost_data["boost"][boost_target].strip().split("\n")
     general_variables: dict = {}
     commands: list = []
     for str_cmd in str_commands:
-        # now that we know that the boost target commands require variables, check if vars section
-        # exists on the boost file
-        if "vars" not in boost_data:
-            context["error"] = MISSING_VARS_SECTION
-            return context
-
-        if not boost_data["vars"]:
-            context["error"] = EMPTY_VARS_SECTION
-            return context
-
         str_variables = find_variables_in(str_cmd)
         command_variables: dict = {}
         for str_var in str_variables:
-            variable = check_inner_variables(
-                boost_data, general_variables, command_variables, str_var, str_cmd
+            create_inner_variables(
+                boost_data, general_variables, command_variables, str_var
             )
-
-            # the storage proceadure on `command_variables` and `general_variables` is already handled inside
-            # the `check_inner_variables` process so we just need to handle the errors backtrace
-            if isinstance(variable, str):
-                context["error"] = variable
-                return context
 
         str_cmd = str_cmd.split(" ")
         command = Command(
@@ -211,13 +160,12 @@ def load_context(boost_file: Path, boost_target: str = "") -> dict:
     return context
 
 
-def check_inner_variables(
+def create_inner_variables(
     boost_data: dict,
     general_variables: dict,
     command_variables: dict,
     variable_key: str,
-    variable_found_in: str,
-) -> Union[Variable, str]:
+) -> Variable:
     """
     Recursively create new variables, this means that if the variable `variable_key`
     requests another variable, the function will call itself to load it repeating the process
@@ -228,12 +176,11 @@ def check_inner_variables(
     Arguments:
         - `boost_data`: boost yaml file content.
         - `general_variables`: general varibales required by all the boost target commands.
+        - `command_variables`: `dict` containing variables used by a certain command.
         - `variable_key`: varible that needs to be created.
 
     Returns:
-        - list of `Variable` or `str` where:
-            - `Variable`: created variables.
-            - `str`: error triggered while processing the creation process.
+        - `Variable` created with inner variables checked.
     """
     # if variable was already allocated in `general_variables`, return it and skip the process
     # so the same `Variable` object can be shared with all variables with request it
@@ -242,51 +189,15 @@ def check_inner_variables(
         return general_variables[variable_key]
 
     # find `variable_key` on boost `vars` section
-    found_variable = next(
-        (var for var in boost_data["vars"] if variable_key in var), None
-    )
-
-    # if the varibale was not found, return the error `MISSING_VARIABLE`
-    if not found_variable:
-        found_in: str = f"{variable_key}: {variable_found_in}"
-        return build_error_hinting(
-            found_in,
-            found_in.index("{" + variable_key + "}") + 1,
-            MISSING_VARIABLE.format(variable_key),
-        )
+    found_variable = next(var for var in boost_data["vars"] if variable_key in var)
 
     # if the variable value has more variables inside, call itself with the new found variables
     str_variables = find_variables_in(found_variable[variable_key])
     variables: dict = {}
     for str_variable in str_variables:
-        # check if variable is requesting itself, which will end up on an infinite loop
-        if str_variable == variable_key:
-            found_in: str = f"{variable_key}: {found_variable[variable_key]}"
-            error = build_error_hinting(
-                found_in,
-                found_in.index("{" + str_variable + "}") + 1,
-                SELF_VAR_REQUEST.format(variable_key),
-            )
-            return error
-
-        inner_variable = check_inner_variables(
-            boost_data,
-            general_variables,
-            command_variables,
-            str_variable,
-            found_variable[variable_key],
+        inner_variable = create_inner_variables(
+            boost_data, general_variables, command_variables, str_variable
         )
-
-        # check for error on inner variable
-        if isinstance(inner_variable, str):
-            # in case of error, add the current variable so we can generate a traceback
-            # of which variable requested a missing one
-            found_in: str = f"{variable_key}: {found_variable[variable_key]}"
-            return build_error_hinting(
-                found_in,
-                found_in.index("{" + str_variable + "}") + 1,
-                f"{inner_variable} <-- '{variable_key}'",
-            )
         variables[str_variable] = inner_variable
 
     # load found variable attributes and create new variable with inner variables
@@ -305,16 +216,3 @@ def check_inner_variables(
     command_variables[variable_key] = variable
     general_variables[variable_key] = variable
     return variable
-
-
-def find_variables_in(content: str):
-    """
-    Search for variables on the given `content` applying a regex pattern.
-
-    Arguments:
-        - `content`: `str` where the regex pattern should be applied to.
-
-    Returns:
-        - a list of found matches.
-    """
-    return re.findall("(?<={)(.*?)(?=})", content)

@@ -11,12 +11,12 @@ def build_error_hinting(error, position, message) -> str:
     multiple exec instructions on a single variable are not allowed
     ```
 
-    params:
+    Arguments:
         - `error`: `str` which contains the error.
         - `position`: character where the error is located.
         - `message`: error message which should be printed out with.
 
-    returns:
+    Returns:
         - `str` containing error and hinting, similar to above example.
     """
     error += "\n"
@@ -31,12 +31,30 @@ def build_error_hinting(error, position, message) -> str:
 
 FILE_FOLDER_DOESNT_EXIST = "the given file/folder '{}' does not exist"
 MISSING_BOOST_SECTION = "the used boost.yaml file does not have a 'boost' section"
-MISSING_VARS_SECTION = "the used boost.yaml file does not have a 'vars' section and you are trying to use variables"
 EMPTY_BOOST_SECTION = "the used boost.yaml file 'boost' section is empty"
-EMPTY_VARS_SECTION = "the used boost.yaml file 'vars' section is empty and you are trying to use variables"
 MISSING_TARGET = "the used boost target '{}' is missing on the 'boost' section"
-MISSING_VARIABLE = "the following variable is missing on the 'vars' section: '{}'"
+MISSING_VARIABLE = "the variable '{}' is missing on the 'vars' section and it was required by the '{}' '{}'"
 UNSUPORTED_OS = "the command '{}' does not support the current used OS"
-SELF_VAR_REQUEST = (
-    "the following variable is requesting itself, which is not allowed: '{}'"
-)
+SELF_VAR_REQUEST = "the variable '{}' is requesting itself, which is not allowed"
+BAD_FORMAT_BOOST_SECTION = "the 'boost' section is bad formatted. It should contain key-value pairs \
+where each key is a boost target and each value is a \\n separated list of commands for that \
+specific boost target"
+BAD_FORMAT_VARS_SECTION = "the 'vars' section is bad formatted. It should contain a list of objects with \
+at least one key-value pair where the key will be used as the variable name and the value will \
+will be used as the variabel value"
+UNKOWN_KEY = "Unkown key '{}'"
+UNSUPPORTED_VAR_ATTRIBUTE = "the attribute '{}' on the var '{}' is not supported"
+BAD_FORMAT_ATTRIBUTES = "the attributes '{}' on the variable '{}' are bad formatted, they should be \
+a comma-separated list of variable attributes. Only characters from a-z and commas are allowed on this field"
+
+"""
+TODO:
+
+Errors:
+    - Variables with blank names
+    - Check characteres on variables names and boost targets
+
+Warnings:
+    - Empty boost target
+    - Redefined variable
+"""
