@@ -18,21 +18,14 @@ from boostbuild.errors import (
     BAD_FORMAT_ATTRIBUTES,
     UNKOWN_KEY,
     UNSUPPORTED_VAR_ATTRIBUTE,
+    NOT_ALLOWED_CHARACTERS,
 )
 
 
 # pylint: disable=too-many-return-statements, too-many-locals, too-many-nested-blocks, too-many-branches
 def validate_boost_file(boost_file: Path, boost_target: str) -> Union[dict, str]:
     """
-    Validate that the boost file is correct. This will validate:
-        - that the given `boost_file` exists.
-        - that the `vars` section is well formatted.
-        - that there are no missing variables.
-        - that a variable is not referencing itself.
-        - that there is not unsupported attributes.
-        - that the `boost` section is not missing.
-        - that the `boost` section is well formatted.
-
+    Validate that the boost file is correct.
     This function is mandatory to be executed on all boost executions. Code running before this
     function MUST not access boost file as it could not be well formatted.
     Code running after this function is save to avoid any checking on the returned `boost_data`
@@ -64,6 +57,13 @@ def validate_boost_file(boost_file: Path, boost_target: str) -> Union[dict, str]
     if not boost_data["boost"]:
         return EMPTY_BOOST_SECTION
 
+    # validate boost targets characters
+    for target, _ in boost_data["boost"].items():
+        if any(c not in VARIABLES_TARGETS_WHITELIST for c in target):
+            return NOT_ALLOWED_CHARACTERS.format(
+                "target", target, "".join(VARIABLES_TARGETS_WHITELIST)
+            )
+
     # check boost section format
     if not isinstance(boost_data["boost"], dict):
         return BAD_FORMAT_BOOST_SECTION
@@ -83,21 +83,16 @@ def validate_boost_file(boost_file: Path, boost_target: str) -> Union[dict, str]
     if not isinstance(variables, list):
         return BAD_FORMAT_VARS_SECTION
 
-    output = validate_variables(variables, boost_data)
-    if output:
-        return output
+    error = validate_variables(variables, boost_data)
+    if error:
+        return error
 
     return boost_data
 
 
 def validate_variables(variables: list, boost_data: dict) -> str:
     """
-    Validate variables and thei attributes. This function checks:
-        - that the attributes key is well formatted.
-        - that there is not unsupported attributes.
-        - that there is no missing variables.
-        - that a variable is not referencing itself.
-        - that there are no missing required variables.
+    Validate that variables and their attributes are well fomatted.
 
     Arguments:
         - `variables`: `dict` containing vars boost section.
@@ -120,7 +115,9 @@ def validate_variables(variables: list, boost_data: dict) -> str:
 
                 # check attributes containing not allowed characters
                 if any(c not in ATTRIBUTES_WHITELIST for c in value):
-                    return BAD_FORMAT_ATTRIBUTES.format(value, variable)
+                    return NOT_ALLOWED_CHARACTERS.format(
+                        "attributes", value, "".join(ATTRIBUTES_WHITELIST)
+                    )
 
                 # check for no supported attributes
                 attrs = value.split(",")
@@ -132,6 +129,12 @@ def validate_variables(variables: list, boost_data: dict) -> str:
             # only one key-value pair is allowed
             if not single_key_found:
                 single_key_found = True
+
+                # check variables names containing not allowed characters
+                if any(c not in VARIABLES_TARGETS_WHITELIST for c in variable):
+                    return NOT_ALLOWED_CHARACTERS.format(
+                        "variable", variable, "".join(VARIABLES_TARGETS_WHITELIST)
+                    )
 
                 # remove variable from required variables if it exists
                 required_variables.pop(variable, None)
@@ -175,10 +178,6 @@ def validate_variables(variables: list, boost_data: dict) -> str:
     return ""
 
 
-def validate_attributes():
-    pass
-
-
 def validate_boost_target(boost_data: dict, boost_target: str):
     """
     Return the first boost target if the given `boost_target` is empty.
@@ -219,4 +218,7 @@ def get_required_vars_dict(boost_data: dict) -> dict[str, tuple[str, str]]:
 
 # list of supported attributes
 SUPPORTTED_ATTRIBUTES = ["secret", "exec"]
-ATTRIBUTES_WHITELIST = set(string.ascii_letters + ",")
+
+# sets of allowed characters
+ATTRIBUTES_WHITELIST = list(string.ascii_letters + ",")
+VARIABLES_TARGETS_WHITELIST = list(string.ascii_letters + "_-")

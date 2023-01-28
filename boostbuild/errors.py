@@ -45,16 +45,7 @@ will be used as the variabel value"
 UNKOWN_KEY = "Unkown key '{}'"
 UNSUPPORTED_VAR_ATTRIBUTE = "the attribute '{}' on the var '{}' is not supported"
 BAD_FORMAT_ATTRIBUTES = "the attributes '{}' on the variable '{}' are bad formatted, they should be \
-a comma-separated list of variable attributes. Only characters from a-z and commas are allowed on this field"
-
-"""
-TODO:
-
-Errors:
-    - Variables with blank names
-    - Check characteres on variables names and boost targets
-
-Warnings:
-    - Empty boost target
-    - Redefined variable
-"""
+a comma-separated list of variable attributes"
+NOT_ALLOWED_CHARACTERS = (
+    "the '{}' '{}' has not-allowed caharacters, allowed characters: '{}'"
+)
