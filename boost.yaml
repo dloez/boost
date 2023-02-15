@@ -4,4 +4,5 @@ vars:
     attributes: secret 
 boost:
   lint: poetry run pylint --rcfile pyproject.toml boostbuild
+  test: poetry run pytest
   publish: poetry publish --build --username {pypi_username} --password {pypi_password}

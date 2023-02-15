@@ -4,7 +4,7 @@ from typing import Union
 import string
 import yaml
 
-from boostbuild.utils import find_variables_in
+from boostbuild.utils import find_variables_in, get_required_vars_dict
 from boostbuild.errors import build_error_hinting
 from boostbuild.errors import (
     EMPTY_BOOST_SECTION,
@@ -48,6 +48,18 @@ def validate_boost_file(boost_file: Path, boost_target: str) -> Union[dict, str]
     # load file
     with open(boost_file, "r", encoding="utf8") as handler:
         boost_data = yaml.load(handler, Loader=yaml.SafeLoader)
+
+    # list of validations functions. ORDER IS IMPORTANT AND MUST BE PRESERVED.
+    validations = [
+        validate_missing_boost_section,
+        validate_empty_boost_section,
+        validate_boost_targets_chars,
+        validate_boost_section_format
+    ]
+    for validation in validations:
+        error = validation(boost_data, boost_target)
+        if error:
+            return error
 
     # check boost section
     if "boost" not in boost_data:
@@ -102,7 +114,9 @@ def validate_variables(variables: list, boost_data: dict) -> str:
         - `str` with the error hinting in case of errors, empty otherwise.
     """
     # get required vars by all boost targets
-    required_variables: dict[str, tuple[str, str]] = get_required_vars_dict(boost_data)
+    required_variables: dict[str, tuple[str, str]] = get_required_vars_dict(
+        boost_data["boost"]
+    )
 
     checked_vars: list = []
     for var in variables:
@@ -178,7 +192,24 @@ def validate_variables(variables: list, boost_data: dict) -> str:
     return ""
 
 
-def validate_boost_target(boost_data: dict, boost_target: str):
+def validate_missing_boost_section(boost_data: dict, _boost_target: str) -> str:
+    """
+    Validate that the given `boost_data` has a boost section.
+
+    Arguments:
+        - `boost_data`: `dict` with the contents of boost file.
+        - `boost_target`: `str` with the content of the argument `target`.
+
+    Returns:
+        - `str` with `MISSING_BOOST_SECTION` error if there is not boost section on `boost_data`.
+            Empty `str` otherwise.
+    """
+    if "boost" not in boost_data:
+        return MISSING_BOOST_SECTION
+    return ""
+
+
+def validate_boost_target(boost_data: dict, boost_target: str) -> str:
     """
     Return the first boost target if the given `boost_target` is empty.
 
@@ -195,25 +226,90 @@ def validate_boost_target(boost_data: dict, boost_target: str):
     return list(boost_data["boost"].keys())[0]
 
 
-def get_required_vars_dict(boost_data: dict) -> dict[str, tuple[str, str]]:
+def validate_file_exists(file: Path) -> str:
     """
-    Return a `dict` where each key is a variable found on `boost_data` and its value its a tuple
-    with the target and the line where it was found.
+    Validate that the given file exists.
 
     Arguments:
-        - `boost_data`: `dict` with the contents of the boost file.
+        - `file`: `Path` to the file to check if it exists or not.
 
     Returns:
-        - `dict` where each key is a variable found on `boost_data` and its value its a tuple
-            with the target and the line where it was found.
+        - `str` with `FILE_FOLDER_DOESNT_EXIST` in case it does not exist or empty if it does.
     """
-    variables = {}
-    for target, commands in boost_data["boost"].items():
-        commands = commands.strip().split("\n")
-        for command in commands:
-            for var in find_variables_in(command):
-                variables[var] = (target, command)
-    return variables
+    if not file.exists():
+        return FILE_FOLDER_DOESNT_EXIST.format(file)
+    return ""
+
+
+def validate_empty_boost_section(boost_data: dict, _boost_target: str) -> str:
+    """
+    Validate that boost section is not empty.
+
+    Arguments:
+        - `boost_data`: `dict` with the contents of boost file.
+        - `boost_target`: `str` with the content of the argument `target`.
+
+    Returns:
+        - `str` with `EMPTY_BOOST_SECTION` error if the boost section is empty.
+            Empty `str` otherwise.
+    """
+    if not boost_data["boost"]:
+        return EMPTY_BOOST_SECTION
+    return ""
+
+
+def validate_boost_targets_chars(boost_data: dict, _boost_target: str) -> str:
+    """
+    Validate that boost targets do not have not allowed chars.
+
+    Arguments:
+        - `boost_data`: `dict` with the contents of boost file.
+        - `boost_target`: `str` with the content of the argument `target`.
+
+    Returns:
+        - `str` with `NOT_ALLOWED_CHARACTERS` error if there is not allowed charcters on boost targets.
+            Empty `str` otherwise.
+    """
+    for target, _ in boost_data["boost"].items():
+        if any(c not in VARIABLES_TARGETS_WHITELIST for c in target):
+            return NOT_ALLOWED_CHARACTERS.format(
+                "target", target, "".join(VARIABLES_TARGETS_WHITELIST)
+            )
+    return ""
+
+
+def validate_boost_section_format(boost_data: dict, _boost_target: str) -> str:
+    """
+    Validate that boost section format is correct.
+
+    Arguments:
+        - `boost_data`: `dict` with the contents of boost file.
+        - `boost_target`: `str` with the content of the argument `target`.
+
+    Returns:
+        - `str` with `BAD_FORMAT_BOOST_SECTION` error if the format of the boost section is not correct.
+            Empty `str` otherwise.
+    """
+    if not isinstance(boost_data["boost"], dict):
+        return BAD_FORMAT_BOOST_SECTION
+    return ""
+
+
+def validate_missing_boost_target(boost_data: dict, boost_target: str) -> str:
+    """
+    Validate that given `boost_target` is not missing from `boost_data`.
+
+    Arguments:
+        - `boost_data`: `dict` with the contents of boost file.
+        - `boost_target`: `str` with the content of the argument `target`.
+
+    Returns:
+        - `str` with `MISSING_BOOST_TARGET` error if the boost target is missing on `boost_data`.
+            Empty `str` otherwise.
+    """
+    if boost_target not in boost_data["boost"]:
+        return MISSING_TARGET.format(boost_target)
+    return ""
 
 
 # list of supported attributes

@@ -29,12 +29,14 @@ def build_error_hinting(error, position, message) -> str:
     return error
 
 
+UNSUPORTED_OS = "the command '{}' does not support the current used OS"
+
+# validated on validations.py
 FILE_FOLDER_DOESNT_EXIST = "the given file/folder '{}' does not exist"
 MISSING_BOOST_SECTION = "the used boost.yaml file does not have a 'boost' section"
 EMPTY_BOOST_SECTION = "the used boost.yaml file 'boost' section is empty"
 MISSING_TARGET = "the used boost target '{}' is missing on the 'boost' section"
 MISSING_VARIABLE = "the variable '{}' is missing on the 'vars' section and it was required by the '{}' '{}'"
-UNSUPORTED_OS = "the command '{}' does not support the current used OS"
 SELF_VAR_REQUEST = "the variable '{}' is requesting itself, which is not allowed"
 BAD_FORMAT_BOOST_SECTION = "the 'boost' section is bad formatted. It should contain key-value pairs \
 where each key is a boost target and each value is a \\n separated list of commands for that \
