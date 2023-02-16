@@ -61,25 +61,6 @@ def validate_boost_file(boost_file: Path, boost_target: str) -> Union[dict, str]
         if error:
             return error
 
-    # check boost section
-    if "boost" not in boost_data:
-        return MISSING_BOOST_SECTION
-
-    # check empty boost section
-    if not boost_data["boost"]:
-        return EMPTY_BOOST_SECTION
-
-    # validate boost targets characters
-    for target, _ in boost_data["boost"].items():
-        if any(c not in VARIABLES_TARGETS_WHITELIST for c in target):
-            return NOT_ALLOWED_CHARACTERS.format(
-                "target", target, "".join(VARIABLES_TARGETS_WHITELIST)
-            )
-
-    # check boost section format
-    if not isinstance(boost_data["boost"], dict):
-        return BAD_FORMAT_BOOST_SECTION
-
     # missing boost target
     boost_target = validate_boost_target(boost_data, boost_target)
     if boost_target not in boost_data["boost"]:
