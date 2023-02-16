@@ -58,3 +58,20 @@ def get_required_vars_dict(targets: dict) -> dict[str, tuple[str, str]]:
                     continue
                 variables[var] = (target, command)
     return variables
+
+
+def get_boost_target(boost_data: dict, boost_target: str) -> str:
+    """
+    Return the first boost target if the given `boost_target` is empty.
+
+    Arguments:
+        - `boost_data`: `dict` with the contents on boost file.
+        - `boost_target`: `str` with the boost target that is going to be executed.
+
+    Returns:
+        - `str` with the first boost target if the given `boost_target` is empty. Return the
+            given `boost_terget` othwerwise.
+    """
+    if boost_target:
+        return boost_target
+    return list(boost_data["boost"])[0]

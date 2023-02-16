@@ -16,7 +16,6 @@ from boostbuild.validations import (
     validate_empty_boost_section,
     validate_boost_targets_chars,
     validate_boost_section_format,
-    validate_boost_target,
     validate_missing_boost_target,
 )
 from boostbuild.errors import (
@@ -34,6 +33,10 @@ from boostbuild.errors import (
 )
 
 
+def return_validations_data(boost_data, boost_target):
+    return {"boost_data": boost_data, "boost_target": boost_target}
+
+
 def test_validate_file_exists():
     write_test_boost_file({"sample": "value"})
     assert validate_file_exists(BOOST_FILE_TEST) == ""
@@ -45,40 +48,46 @@ def test_validate_file_exists():
 
 def test_validate_boost_section():
     boost_data = {"boost": {"example": "", "example2": ""}}
-    assert validate_missing_boost_section(boost_data, "") == ""
+    assert validate_missing_boost_section(return_validations_data(boost_data, "")) == ""
 
     boost_data = {}
-    assert validate_missing_boost_section(boost_data, MISSING_BOOST_SECTION)
+    assert (
+        validate_missing_boost_section(return_validations_data(boost_data, ""))
+        == MISSING_BOOST_SECTION
+    )
 
 
 def test_validate_empty_boost_section():
     boost_data = {"boost": {"example": "value"}}
-    assert validate_empty_boost_section(boost_data, "") == ""
+    assert validate_empty_boost_section(return_validations_data(boost_data, "")) == ""
 
     boost_data = {"boost": ""}
-    assert validate_empty_boost_section(boost_data, "") == EMPTY_BOOST_SECTION
+    assert (
+        validate_empty_boost_section(return_validations_data(boost_data, ""))
+        == EMPTY_BOOST_SECTION
+    )
 
 
 def test_validate_boost_targets_chars():
     boost_data = {"boost": {"example": ""}}
-    assert validate_boost_targets_chars(boost_data, "") == ""
+    assert validate_boost_targets_chars(return_validations_data(boost_data, "")) == ""
 
     boost_data = {"boost": {"example-": ""}}
-    assert validate_boost_targets_chars(boost_data, "") == ""
+    assert validate_boost_targets_chars(return_validations_data(boost_data, "")) == ""
 
     boost_data = {"boost": {"example_": ""}}
-    assert validate_boost_targets_chars(boost_data, "") == ""
+    assert validate_boost_targets_chars(return_validations_data(boost_data, "")) == ""
 
     boost_data = {"boost": {"example:": ""}}
     assert validate_boost_targets_chars(
-        boost_data, ""
+        return_validations_data(boost_data, "")
     ) == NOT_ALLOWED_CHARACTERS.format(
         "target", "example:", "".join(VARIABLES_TARGETS_WHITELIST)
     )
 
     boost_data = {"boost": {"example%": "", "example2": ""}}
     assert validate_boost_targets_chars(
-        boost_data, ""
+        return_validations_data(boost_data, "")
     ) == NOT_ALLOWED_CHARACTERS.format(
         "target", "example%", "".join(VARIABLES_TARGETS_WHITELIST)
     )
@@ -86,28 +95,29 @@ def test_validate_boost_targets_chars():
 
 def test_validate_boost_section_format():
     boost_data = {"boost": {"example": ""}}
-    assert validate_boost_section_format(boost_data, "") == ""
+    assert validate_boost_section_format(return_validations_data(boost_data, "")) == ""
 
     boost_data = {"boost": {}}
-    assert validate_boost_section_format(boost_data, "") == ""
+    assert validate_boost_section_format(return_validations_data(boost_data, "")) == ""
 
     boost_data = {"boost": ""}
-    assert validate_boost_section_format(boost_data, "") == BAD_FORMAT_BOOST_SECTION
-
-
-def test_validate_boost_target():
-    boost_data = {"boost": {"example": "", "example2": ""}}
-
-    assert validate_boost_target(boost_data, "example") == "example"
-    assert validate_boost_target(boost_data, "") == "example"
-    assert validate_boost_target(boost_data, "example2") == "example2"
+    assert (
+        validate_boost_section_format(return_validations_data(boost_data, ""))
+        == BAD_FORMAT_BOOST_SECTION
+    )
 
 
 def test_validate_missing_boost_target():
     boost_data = {"boost": {"example": "", "example2": ""}}
 
-    assert validate_missing_boost_target(boost_data, "example") == ""
-    assert validate_missing_boost_target(boost_data, "example2") == ""
-    assert validate_missing_boost_target(boost_data, "asd") == MISSING_TARGET.format(
-        "asd"
+    assert (
+        validate_missing_boost_target(return_validations_data(boost_data, "example"))
+        == ""
     )
+    assert (
+        validate_missing_boost_target(return_validations_data(boost_data, "example2"))
+        == ""
+    )
+    assert validate_missing_boost_target(
+        return_validations_data(boost_data, "asd")
+    ) == MISSING_TARGET.format("asd")

@@ -5,10 +5,19 @@ from tests.conftest import (
     remove_test_boost_file,
 )
 from boostbuild.utils import (
+    get_boost_target,
     get_required_vars_dict,
     find_variables_in,
     from_yaml_to_dict,
 )
+
+
+def test_get_boost_target():
+    boost_data = {"boost": {"example": "", "example2": ""}}
+
+    assert get_boost_target(boost_data, "example") == "example"
+    assert get_boost_target(boost_data, "") == "example"
+    assert get_boost_target(boost_data, "example2") == "example2"
 
 
 def test_from_yaml_to_dict():

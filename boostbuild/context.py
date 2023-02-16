@@ -3,8 +3,8 @@ import os
 import importlib
 from pathlib import Path
 
-from boostbuild.utils import find_variables_in
-from boostbuild.validations import validate_boost_file, validate_boost_target
+from boostbuild.utils import find_variables_in, get_boost_target
+from boostbuild.validations import validate_boost_file
 from boostbuild.errors import UNSUPORTED_OS
 
 # pylint: disable=too-few-public-methods
@@ -136,7 +136,7 @@ def load_context(boost_file: Path, boost_target: str) -> dict:
         return context
 
     boost_data: dict = output
-    boost_target = validate_boost_target(boost_data, boost_target)
+    boost_target = get_boost_target(boost_data, boost_target)
     context["target"] = boost_target
     str_commands: str = boost_data["boost"][boost_target].strip().split("\n")
     general_variables: dict = {}
