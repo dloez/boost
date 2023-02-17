@@ -11,12 +11,15 @@ from tests.conftest import (
 )
 from boostbuild.validations import (
     VARIABLES_TARGETS_WHITELIST,
+    ATTRIBUTES_WHITELIST,
     validate_file_exists,
     validate_missing_boost_section,
     validate_empty_boost_section,
     validate_boost_targets_chars,
     validate_boost_section_format,
     validate_missing_boost_target,
+    validate_attributes_format,
+    validate_attributes_chars,
 )
 from boostbuild.errors import (
     FILE_FOLDER_DOESNT_EXIST,
@@ -34,6 +37,7 @@ from boostbuild.errors import (
 
 
 def return_validations_data(boost_data, boost_target):
+    """Build and return a dictionary required for validations function."""
     return {"boost_data": boost_data, "boost_target": boost_target}
 
 
@@ -121,3 +125,39 @@ def test_validate_missing_boost_target():
     assert validate_missing_boost_target(
         return_validations_data(boost_data, "asd")
     ) == MISSING_TARGET.format("asd")
+
+
+def test_validate_attributes_format():
+    attributes = ""
+    assert validate_attributes_format(attributes) == ""
+
+    attributes = ["example", "example2"]
+    assert validate_attributes_format(attributes) == BAD_FORMAT_ATTRIBUTES.format(
+        attributes, "attributes"
+    )
+
+    attributes = None
+    assert validate_attributes_format(attributes) == BAD_FORMAT_ATTRIBUTES.format(
+        attributes, "attributes"
+    )
+
+
+def test_validate_attributes_chars():
+    attributes = ""
+    assert validate_attributes_chars(attributes) == ""
+
+    attributes = "asdasd"
+    assert validate_attributes_chars(attributes) == ""
+
+    attributes = "asd,asd"
+    assert validate_attributes_chars(attributes) == ""
+
+    attributes = "123"
+    assert validate_attributes_chars(attributes) == NOT_ALLOWED_CHARACTERS.format(
+        "attributes", attributes, "".join(ATTRIBUTES_WHITELIST)
+    )
+
+    attributes = "asd_asd"
+    assert validate_attributes_chars(attributes) == NOT_ALLOWED_CHARACTERS.format(
+        "attributes", attributes, "".join(ATTRIBUTES_WHITELIST)
+    )

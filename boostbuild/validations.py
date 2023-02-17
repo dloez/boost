@@ -22,7 +22,6 @@ from boostbuild.errors import (
 )
 
 
-# pylint: disable=too-many-return-statements, too-many-locals, too-many-nested-blocks, too-many-branches
 def validate_boost_file(boost_file: Path, boost_target: str) -> Union[dict, str]:
     """
     Validate that the boost file is correct.
@@ -91,9 +90,9 @@ def validate_variables(validations_data: dict) -> str:
     if not required_vars:
         return ""
 
-    variables = boost_data["vars"]
+    variables_section = boost_data["vars"]
     # check format
-    if not isinstance(variables, list):
+    if not isinstance(variables_section, list):
         return BAD_FORMAT_VARS_SECTION
 
     # get required vars by all boost targets
@@ -102,25 +101,21 @@ def validate_variables(validations_data: dict) -> str:
     )
 
     checked_vars: list = []
-    for var in variables:
+    for var in variables_section:
         single_key_found = False
         for variable, value in var.items():
             if variable == "attributes":
-                # check attributes not containing a string
-                if not isinstance(value, str):
-                    return BAD_FORMAT_ATTRIBUTES.format(value, variable)
+                # list of attribute validations functions. ORDER IS IMPORTANT AND MUST BE PRESERVED.
+                attribute_validations = [
+                    validate_attributes_format,
+                    validate_attributes_chars,
+                    validate_supported_attributes,
+                ]
 
-                # check attributes containing not allowed characters
-                if any(c not in ATTRIBUTES_WHITELIST for c in value):
-                    return NOT_ALLOWED_CHARACTERS.format(
-                        "attributes", value, "".join(ATTRIBUTES_WHITELIST)
-                    )
-
-                # check for no supported attributes
-                attrs = value.split(",")
-                for attr in attrs:
-                    if attr not in SUPPORTTED_ATTRIBUTES:
-                        return UNSUPPORTED_VAR_ATTRIBUTE.format(attr, variable)
+                for validation in attribute_validations:
+                    error = validation(value)
+                    if error:
+                        return error
                 continue
 
             # only one key-value pair is allowed
@@ -140,7 +135,8 @@ def validate_variables(validations_data: dict) -> str:
                 required_inner_vars = find_variables_in(value)
                 for rvar in required_inner_vars:
                     found_variable = next(
-                        (var for boost_var in variables if rvar in boost_var), None
+                        (var for boost_var in variables_section if rvar in boost_var),
+                        None,
                     )
 
                     # avoid re-checking inner variables
@@ -270,6 +266,59 @@ def validate_missing_boost_target(validations_data: dict) -> str:
     """
     if validations_data["boost_target"] not in validations_data["boost_data"]["boost"]:
         return MISSING_TARGET.format(validations_data["boost_target"])
+    return ""
+
+
+def validate_attributes_format(attributes: str) -> str:
+    """
+    Validate the format of the attributes inside a variable.
+
+    Arguments:
+        - `attributes`: `str` with the attributes that needs to be validated.
+
+    Returns:
+        - `str` with `BAD_FORMAT_ATTRIBUTES` error if the attributes are bad formatted.
+            Empty `str` otherwise.
+    """
+    if not isinstance(attributes, str):
+        return BAD_FORMAT_ATTRIBUTES.format(attributes, "attributes")
+    return ""
+
+
+def validate_attributes_chars(attributes: str) -> str:
+    """
+    Validate that there are only allowed characters in attributes. Allowed characters are listed in
+    `ATTRIBUTES_WHITELIST`.
+
+    Arguments:
+        - `attributes`: `str` with the attributes that needs to be validated.
+
+    Returns:
+        - `str` with `NOT_ALLOWED_CHARACTERS` error if the attributes contains not allowed characters.
+            Empty `str` otherwise.
+    """
+    if any(c not in ATTRIBUTES_WHITELIST for c in attributes):
+        return NOT_ALLOWED_CHARACTERS.format(
+            "attributes", attributes, "".join(ATTRIBUTES_WHITELIST)
+        )
+    return ""
+
+
+def validate_supported_attributes(attributes: str) -> str:
+    """
+    Validate that attributes only contains supported attributes. Supported attribues are listed in `SUPPORTED_ATTRIBUTES`.
+
+    Arguments:
+        - `attributes`: `str` with the attributes that needs to be validated.
+
+    Returns:
+        - `str` with `UNSUPORTED_VAR_ATTRIBUTE` error if the attributes contains not supported attributes.
+            Empty `str` otherwise.
+    """
+    attrs = attributes.split(",")
+    for attr in attrs:
+        if attr not in SUPPORTTED_ATTRIBUTES:
+            return UNSUPPORTED_VAR_ATTRIBUTE.format(attr, "attributes")
     return ""
 
 
