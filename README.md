@@ -1,5 +1,22 @@
+## Project archived
+This project aimed to be a research project for creating a multi-platform standard command runner with a single yaml file to define commands. During the research of this project, I focused on:
+1. Easy to use: The user should be able to download a binary, add it to the path, and just use it. I was intending to use pyoxidizer for this purpose, but it would limit point 2.
+2. User customizable: The user could create custom commands in Python. Allowing this feature while providing point 1 seems to be possible but very hacky/slow.
+3. Standardized behaviors across multiple OS: The user should be able to write a command, like `rm` and it would be automatically translated into the required command/code depending on the os. This was mainly done by running the command logic using Python code, or by defining different functions that would be called depending on the OS. I like this, I think it would be very useful but the amount of effort to support enough commands to cover different use cases is noticeable, and I do not have the required time to do so.
+
+This is what I found:
+- Python is an excellent language but is really bad when you have to distribute an application, I did not realize how bad it is until this project. I think there are better-suited languages for this purpose.
+- User simplicity comes at the cost of losing control of the execution. A not well-suited abstraction layer will not cover most of the user cases, not even a decent or usable part of them, and this is what I was starting to feel with the yaml file with custom commands.
+
+With the above information, I came up with 2 solutions. One solution could be to keep the same idea but in a different language that would allow users to simply download a binary, and run the tool; I would really love to build this in the future (at least for the fun!).
+The other idea, which is taken in a different direction and inspired by the fantastic go tool [Mage](https://github.com/magefile/mage), would be to have a tool that would allow the user to run functions defined in multiple languages. The user would have the choice to use a language supported by its required platforms which means that the user would rely on a language and its ecosystem for multiplatform support rather than in self-made commands. The tool would need to simplify how the underline language is called. For example, it would need to allow the user to define the `PYTHON_PATH` env variable to define which Python interpreter should run a Python function, or define the shell which should run a bash script. I will try this approach, and, I am currently working on [Arcanist](https://github.com/dloez/arcanist)!
+
+Fantastic tools that I found during this research:
+- [Just](https://github.com/casey/just): it is a Make inspired tool for running commands. It relies on Git Bash on Windows but you can control which shell is used for running the commands.
+- [Mage](https://github.com/magefile/mage): run go functions within the cli.
+
 # Boost
-Boost is a simple build system that aims to create an interface for shell command substitution across different operative systems while keeping a simple interface. Boost tries to centralize build steps on different development environments.
+Boost is a simple command runner that aims to create an interface for shell command substitution across different operative systems while keeping a simple interface. Boost tries to centralize build steps on different development environments.
 
 Boost adds a simple way to add custom commands with different behaviours for different platforms.
 
